@@ -2,9 +2,13 @@
   "name": "faster-features-ingest",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "Stateless Cloudflare Worker that turns anonymous app feedback into GitHub issues.",
   "scripts": {
     "setup": "node setup.mjs",
+    "bundle": "node bundle.mjs",
+    "test": "node test/worker.test.mjs",
+    "predeploy": "node bundle.mjs",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy"
   },

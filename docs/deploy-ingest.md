@@ -56,12 +56,10 @@ Create a **fine-grained personal access token** scoped to just the target repo:
 
 - Repository access: **only this project's own repo** (the one with the code, so
   the AI has full context when it builds an approved request).
-- Permissions: **Issues → Read and write**.
+- Permissions: **Issues → Read and write**, and **Webhooks → Read and write**
+  (the latter lets setup register the label→build webhook for you).
 
-Copy the token. This is the only credential the Worker needs.
-
-> Prefer a GitHub App for production multi-repo use, but a fine-grained PAT is
-> the simplest path and stays scoped to one repo.
+Copy the token.
 
 ## 2. Deploy the Worker
 
@@ -69,34 +67,47 @@ From `packages/ingest-worker`:
 
 ```bash
 npm install
+npm run bundle              # inline widgets into assets.js
 npx wrangler login          # one-time, opens browser
-# set non-secret vars in wrangler.toml first (GITHUB_REPO, ALLOWED_ORIGINS)
+# set vars in wrangler.toml first (GITHUB_REPO, OWNER, BUILD_RUNNER, ALLOWED_ORIGINS)
 npx wrangler secret put GITHUB_TOKEN     # paste the token from step 1
-npx wrangler secret put SHARED_SECRET    # optional; any random string
+npx wrangler secret put WEBHOOK_SECRET   # any random string
+npx wrangler secret put SHARED_SECRET    # optional
 npx wrangler deploy
 ```
 
 Wrangler prints your Worker URL, e.g.
 `https://faster-features-ingest.your-subdomain.workers.dev`.
 
-## 3. Configure
+## 3. Register the webhook
 
-- Put the Worker URL in your widget's `data-ingest-url` (and in
-  `faster-features.config.yml` → `ingestUrl`).
-- Set `ALLOWED_ORIGINS` in `wrangler.toml` to the sites that may submit feedback
-  (comma-separated). Use `*` only for quick testing.
-- If you set `SHARED_SECRET`, pass the same value to the widget as `data-key`.
+So adding a `build` label kicks off the runner (no file in your repo):
+repo **Settings → Webhooks → Add webhook** →
+- Payload URL: `<WORKER_URL>/webhook`
+- Content type: `application/json`
+- Secret: the same `WEBHOOK_SECRET` you set above
+- Events: **Issues**
 
-## 4. Test
+(`npm run setup` does this step automatically.)
+
+## 4. Embed + test
+
+Paste one line into your app:
+
+```html
+<script src="<WORKER_URL>/widget.js"></script>
+```
+
+Or test the backend directly:
 
 ```bash
 curl -X POST "$WORKER_URL" \
   -H "Content-Type: application/json" \
-  -H "x-ff-key: $SHARED_SECRET" \
   -d '{"message":"test from curl","type":"idea","context":{"page":"/test"}}'
 ```
 
-A new issue labeled `feedback`, `pending-triage` should appear in your repo.
+A new issue labeled `feedback`, `pending-triage` should appear in your repo, with
+you assigned to it.
 
 ## Notes on abuse
 

@@ -4,32 +4,31 @@ A zero-dependency in-app feedback button. Users submit feedback; it becomes a
 triaged GitHub issue. **The user never needs a GitHub account**, and the widget
 never holds a GitHub token (that lives in your [ingest Worker](../ingest-worker)).
 
-## Vanilla JS (any site)
+## Vanilla JS — one line, no config
 
-Add one script tag:
+The Worker serves the widget and the widget infers its ingest URL from where it
+was loaded, so the embed is a single line (this is what `npm run setup` prints):
+
+```html
+<script src="https://faster-features-ingest.you.workers.dev/widget.js"></script>
+```
+
+A floating **Feedback** button appears bottom-right. That's it — nothing else to
+host or configure.
+
+Optional attributes if you want them:
 
 ```html
 <script
-  src="https://your-cdn/widget.js"
-  data-ingest-url="https://faster-features-ingest.you.workers.dev"
+  src="https://faster-features-ingest.you.workers.dev/widget.js"
   data-app-version="1.4.2"
   data-user="optional-user-id-or-email"
   data-key="optional-shared-secret"
 ></script>
 ```
 
-A floating **Feedback** button appears bottom-right. That's it.
-
-You can also configure before the script loads:
-
-```html
-<script>
-  window.FasterFeatures = {
-    ingestUrl: "https://faster-features-ingest.you.workers.dev",
-    appVersion: "1.4.2",
-  };
-</script>
-```
+(You can still self-host `widget.js` and set `data-ingest-url` explicitly if you
+prefer serving it from your own assets.)
 
 ## React
 
@@ -88,10 +87,7 @@ feedback going somewhere. Add a roadmap page to your site:
 
 ```html
 <div id="ff-roadmap"></div>
-<script
-  src="https://your-cdn/roadmap.js"
-  data-ingest-url="https://faster-features-ingest.you.workers.dev"
-></script>
+<script src="https://faster-features-ingest.you.workers.dev/roadmap.js"></script>
 ```
 
 Or in React:

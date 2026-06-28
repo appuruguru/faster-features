@@ -7,7 +7,8 @@ secrets live in this repo or in the browser, and no PII is collected by default.
 
 | Secret           | Lives in                                  | Notes                                |
 | ---------------- | ----------------------------------------- | ------------------------------------ |
-| `GITHUB_TOKEN`   | Cloudflare Worker secret (`wrangler secret put`) | Fine-grained, Issues:write on one repo. |
+| `GITHUB_TOKEN`   | Cloudflare Worker secret (`wrangler secret put`) | Fine-grained, Issues:write (+ Webhooks:write) on one repo. |
+| `WEBHOOK_SECRET` | Cloudflare Worker secret                  | Verifies GitHub webhook payloads (HMAC). |
 | `SHARED_SECRET`  | Cloudflare Worker secret (optional)       | Deters random POSTs to the Worker.   |
 
 - These are set on the Worker (CLI or the Cloudflare dashboard) and are **never**

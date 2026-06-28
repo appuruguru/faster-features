@@ -20,7 +20,9 @@
     if (script && script.getAttribute(n) != null) return script.getAttribute(n);
     return d;
   }
-  var ingestUrl = cfg.ingestUrl || attr("data-ingest-url", "");
+  var scriptOrigin = "";
+  try { if (script && script.src) scriptOrigin = new URL(script.src).origin; } catch (e) {}
+  var ingestUrl = cfg.ingestUrl || attr("data-ingest-url", "") || scriptOrigin;
   var repo = cfg.repo || attr("data-repo", "");
   var mountSel = cfg.mount || attr("data-mount", "#ff-roadmap");
 

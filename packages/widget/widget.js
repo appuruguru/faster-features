@@ -25,7 +25,11 @@
     return fallback;
   }
 
-  var ingestUrl = cfg.ingestUrl || attr("data-ingest-url", "");
+  // When the script is served by the Worker itself, default the ingest URL to
+  // the script's own origin — so the embed can be a single line with no config.
+  var scriptOrigin = "";
+  try { if (script && script.src) scriptOrigin = new URL(script.src).origin; } catch (e) {}
+  var ingestUrl = cfg.ingestUrl || attr("data-ingest-url", "") || scriptOrigin;
   var sharedKey = cfg.key || attr("data-key", "");
   var appVersion = cfg.appVersion || attr("data-app-version", "");
   var user = cfg.user || attr("data-user", "");

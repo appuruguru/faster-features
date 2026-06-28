@@ -54,15 +54,16 @@ code — it lives only in the Worker.
 
 Keep this change minimal: a single script tag or one component + one render site.
 
-## Step 4 — Add GitHub automation (once per repo)
+## Step 4 — GitHub automation (usually nothing to copy)
 
-Copy into the target repo:
-- `.github/ISSUE_TEMPLATE/feedback.yml`
-- `.github/workflows/notify.yml`, `backlog.yml`, `build.yml`
-- `faster-features.config.yml` — fill `repo`, `owner`, `ingestUrl`, `buildRunner`.
+The Worker does the GitHub-side work itself: it assigns the owner on issue
+creation (the notification) and handles the `build` label via a webhook it
+registered during setup. So for the default `claude-web` and `copilot` runners,
+**no files go into the target repo.**
 
-Pick a build runner with the user (see `docs/build-runners.md`): default
-`claude-web` needs no secrets; `claude-api` needs an `ANTHROPIC_API_KEY` secret.
+Only if the user chose `claude-api` (fully automated CI builds): copy
+`.github/workflows/build.yml` into the repo and add an `ANTHROPIC_API_KEY`
+secret. See `docs/build-runners.md`.
 
 ## Step 5 — Optional public roadmap (+ upvoting)
 

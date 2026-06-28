@@ -17,16 +17,13 @@ Designed around two rules:
 ## The flow
 
 ```
-[In-app widget]          frontend code in your app; no account for users
+[In-app widget]          one <script> line in your app; no account for users
       | POST
-[Ingest Worker]          your free Cloudflare Worker; holds the GitHub token
+[Ingest Worker]          your free Cloudflare Worker; holds the token, does it all
+      |                  (creates issue, assigns you, serves the widget, handles labels)
+[GitHub Issue]           created + you're assigned → GitHub Mobile push
       |
-[GitHub Issue]           GitHub's native AI summarizes/labels it
-      |
-[GitHub Mobile push]     you're auto-assigned — no Discord, no server
-      |
-[You tap a label]        backlog ──► Project board
-      |                   build   ──► AI runner
+[You add a label]        build ──► Worker kicks off your AI runner (via webhook)
       v
 [AI writes code → PR]     Claude (sub or API) or Copilot — you pick. The one paid step.
 
@@ -42,8 +39,8 @@ Designed around two rules:
 | Piece                                          | What it is                                                    |
 | ---------------------------------------------- | ------------------------------------------------------------ |
 | [`packages/widget`](packages/widget)           | Drop-in feedback button **and** public roadmap (vanilla JS + React). No token. |
-| [`packages/ingest-worker`](packages/ingest-worker) | Cloudflare Worker: feedback POST → GitHub issue.         |
-| [`.github/`](.github)                           | Issue template + workflows: notify, backlog, build.          |
+| [`packages/ingest-worker`](packages/ingest-worker) | Cloudflare Worker: issue creation, notify, roadmap, votes, webhook builds, serves the widgets. |
+| [`.github/`](.github)                           | Issue template + an **optional** `build.yml` (only for the `claude-api` runner). |
 | [`faster-features.config.yml`](faster-features.config.yml) | One config file: repo, owner, ingest URL, build runner. |
 | [`docs/`](docs)                                 | [Deploy the Worker](docs/deploy-ingest.md) · [Build runners](docs/build-runners.md) |
 | [`SECURITY.md`](SECURITY.md)                    | What's stored where; no secrets in git, no PII by default.    |
@@ -51,24 +48,29 @@ Designed around two rules:
 
 ## Quickstart
 
-1. **Copy** `.github/` and `faster-features.config.yml` into the repo that should
-   receive feedback, and edit the config (`repo`, `owner`, `ingestUrl`).
-2. **Deploy the ingest Worker** — terminal-free with the button, or `npm run setup`:
+Just **two steps** — nothing is copied into your app repo (the Worker does the
+GitHub-side work via a webhook it registers itself):
+
+1. **Deploy the ingest Worker** — terminal (`cd packages/ingest-worker && npm run
+   setup`) or the no-terminal button. It asks for your repo + owner, deploys, and
+   prints your one-line embed snippet. Full guide:
+   [docs/deploy-ingest.md](docs/deploy-ingest.md).
 
    [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/YOUR-USER/faster_features/tree/main/packages/ingest-worker)
 
-   <sub>(Swap `YOUR-USER` for your GitHub username after pushing this repo public — the button only works against a public repo URL.)</sub>
-   Full guide: [docs/deploy-ingest.md](docs/deploy-ingest.md).
-3. **Embed the widget** in your app → [packages/widget/README.md](packages/widget/README.md),
-   pointing `data-ingest-url` at your Worker. One `<script>` tag, or the React
-   component. Or let AI do it: run the [`/faster-features` skill](skills/README.md)
-   in Claude Code, or point any agent at [AGENTS.md](AGENTS.md).
-4. **Pick a build runner** (`buildRunner` in the config) →
-   [docs/build-runners.md](docs/build-runners.md). Default `claude-web` needs no
-   secrets and no per-token cost.
+   <sub>(The button needs a public repo URL; the terminal path works with a private repo.)</sub>
 
-Now feedback flows: submit from the demo page, get a GitHub Mobile push, add
-`build`, and watch a PR appear.
+2. **Paste the one line** setup prints into your app, before `</body>`:
+   ```html
+   <script src="https://your-worker.workers.dev/widget.js"></script>
+   ```
+   Or let AI do it: the [`/faster-features` skill](skills/README.md) in Claude
+   Code, or point any agent at [AGENTS.md](AGENTS.md).
+
+Now feedback flows: submit from the [demo page](examples/demo.html), get a GitHub
+Mobile push, add `build`, and the Worker kicks off your AI runner. *(Only the
+opt-in `claude-api` runner needs the `build.yml` workflow in your repo — the
+default `claude-web` and `copilot` runners don't.)*
 
 ## Cost
 

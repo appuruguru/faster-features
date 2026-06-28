@@ -2,30 +2,31 @@ name = "faster-features-ingest"
 main = "worker.js"
 compatibility_date = "2026-01-01"
 
-# Non-secret config. Set these to your values (or via the dashboard / `wrangler`).
+# Non-secret config. `npm run setup` overwrites these with your answers.
 [vars]
-# Default repo issues are filed into (owner/name).
+# Repo issues are filed into (owner/name).
 GITHUB_REPO = "your-username/your-repo"
-# Comma-separated list of sites allowed to POST. Use "*" to allow any origin.
+# GitHub login assigned to new issues — assignment is what fires the mobile push.
+OWNER = "your-username"
+# Build runner on the `build` label: claude-web | copilot | claude-api
+BUILD_RUNNER = "claude-web"
+# Comma-separated sites allowed to POST feedback. "*" = any origin.
 ALLOWED_ORIGINS = "https://your-app.com,http://localhost:3000"
-# Optional: run ONE Worker for several of YOUR repos. Widgets may then send
-# repo:"owner/name", but only values listed here are honored. Leave empty to
-# always use GITHUB_REPO. The GITHUB_TOKEN must have Issues:write on each.
-ALLOWED_REPOS = ""
-# Issues with this label appear on the public roadmap (GET endpoint). The dev
-# adds it to opt an item in — nothing is public until they do.
+# Label that opts an item onto the public roadmap.
 ROADMAP_LABEL = "roadmap"
+# Optional: serve several of your repos from one Worker (widgets send data-repo).
+ALLOWED_REPOS = ""
 
-# Secrets are NOT stored here. Set them with:
-#   wrangler secret put GITHUB_TOKEN
-#   wrangler secret put SHARED_SECRET   # optional
+# Secrets are NOT stored here. `npm run setup` sets them; or manually:
+#   wrangler secret put GITHUB_TOKEN     # Issues:write (+ Webhooks:write for auto-hook)
+#   wrangler secret put WEBHOOK_SECRET   # verifies GitHub webhook payloads
+#   wrangler secret put SHARED_SECRET    # optional
 
 # Roadmap upvoting. Both setup methods create this KV store automatically:
 #   • Deploy-to-Cloudflare button: provisions it during the browser flow.
 #   • npm run setup: creates and fills the id for you.
-# To DISABLE upvoting, delete this whole block — the Worker turns voting off
-# automatically when VOTES isn't bound. (A bare `wrangler deploy` needs a real
-# id here, so use `npm run setup` or the button rather than deploying by hand.)
+# Delete this block to disable upvoting (the Worker turns voting off when VOTES
+# isn't bound). A bare `wrangler deploy` needs a real id — use setup or the button.
 [[kv_namespaces]]
 binding = "VOTES"
 id = "replace-me"

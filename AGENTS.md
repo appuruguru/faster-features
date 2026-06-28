@@ -34,12 +34,15 @@ Worker and GitHub automation are set up once per repo.
    they don't have one, point them to `docs/deploy-ingest.md` (button or
    `npm run setup`) — do NOT hardcode a token anywhere in the app.
 
-4. **Add repo automation (once).** Copy `.github/ISSUE_TEMPLATE/feedback.yml` and
-   `.github/workflows/{notify,backlog,build}.yml` into the repo, and add
-   `faster-features.config.yml` with `repo`, `owner`, `ingestUrl`, `buildRunner`.
+4. **No repo files needed for the default.** The Worker handles notifications
+   (assign-on-create) and the build label (via a webhook it registers during
+   setup). Do **not** copy workflow files for `claude-web` or `copilot`. The
+   issue template and `faster-features.config.yml` are optional conveniences.
 
-5. **Pick a build runner.** Default `claude-web` needs no secrets. For `claude-api`
-   add an `ANTHROPIC_API_KEY` repo secret. See `docs/build-runners.md`.
+5. **Pick a build runner.** Default `claude-web` needs no secrets and no repo
+   files. `copilot` likewise. Only `claude-api` requires copying
+   `.github/workflows/build.yml` and adding an `ANTHROPIC_API_KEY` secret. See
+   `docs/build-runners.md`.
 
 6. **Verify.** Build the app, confirm the Feedback button renders, and submit a
    test from a logged-out browser — a GitHub issue should appear.

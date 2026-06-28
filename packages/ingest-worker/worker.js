@@ -46,6 +46,10 @@ export default {
       return new Response(null, { status: 204, headers: corsHeaders(origin, env) });
     }
 
+    // First real request bootstraps the repo (labels + webhook) so BOTH the
+    // terminal setup and the no-terminal Deploy button end up fully wired.
+    await ensureBootstrap(env, url.origin);
+
     // GitHub webhook (server-to-server; signature-verified).
     if (request.method === "POST" && path === "/webhook") return handleWebhook(request, env);
 
@@ -283,6 +287,57 @@ async function handleVote(request, env) {
   map[id] = (map[id] || 0) + 1;
   await env.VOTES.put(VOTES_KEY(repo), JSON.stringify(map));
   return json({ ok: true, id, votes: map[id] }, 200, openCors);
+}
+
+// ---------------------------------------------------------------------------
+// One-time bootstrap: create labels + register the webhook (idempotent)
+// ---------------------------------------------------------------------------
+
+let bootstrapped = false; // per-isolate guard
+
+const BOOTSTRAP_LABELS = [
+  { name: "feedback", color: "0e8a16", description: "Incoming user feedback" },
+  { name: "pending-triage", color: "fbca04", description: "Awaiting your review" },
+  { name: "backlog", color: "c5def5", description: "Shelved on the roadmap as Planned" },
+  { name: "build", color: "1d76db", description: "Approved - kicks off the AI build" },
+  { name: "roadmap", color: "5319e7", description: "Show on the public roadmap" },
+  { name: "in-progress", color: "d93f0b", description: "Being worked on" },
+];
+
+async function ensureBootstrap(env, origin) {
+  if (bootstrapped) return;
+  bootstrapped = true;
+  if (!env.GITHUB_TOKEN || !env.GITHUB_REPO) return;
+  try {
+    // If KV is available, persist the flag so it runs once ever, not per isolate.
+    const flagKey = `bootstrap:${env.GITHUB_REPO}`;
+    if (env.VOTES && (await env.VOTES.get(flagKey))) return;
+    await bootstrap(env, origin);
+    if (env.VOTES) await env.VOTES.put(flagKey, "1");
+  } catch {
+    // Best-effort + idempotent; a later cold start retries.
+  }
+}
+
+async function bootstrap(env, origin) {
+  const repo = env.GITHUB_REPO;
+  for (const label of BOOTSTRAP_LABELS) {
+    await gh(env, `/repos/${repo}/labels`, "POST", label); // 422 if it exists — fine
+  }
+  if (env.WEBHOOK_SECRET) {
+    const hookUrl = origin + "/webhook";
+    const list = await gh(env, `/repos/${repo}/hooks`, "GET");
+    if (list.ok) {
+      const hooks = await list.json();
+      if (hooks.some?.((h) => h.config && h.config.url === hookUrl)) return;
+    }
+    await gh(env, `/repos/${repo}/hooks`, "POST", {
+      name: "web",
+      active: true,
+      events: ["issues"],
+      config: { url: hookUrl, content_type: "json", secret: env.WEBHOOK_SECRET },
+    });
+  }
 }
 
 // ---------------------------------------------------------------------------

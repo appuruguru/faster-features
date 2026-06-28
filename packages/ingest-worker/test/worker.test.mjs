@@ -36,6 +36,7 @@ function ghResp(status, obj) {
 globalThis.fetch = async (url, init = {}) => {
   url = String(url);
   fetchCalls.push({ url, init });
+  if (url.includes("/hooks") && (init.method || "GET") === "GET") return ghResp(200, []);
   if (url.includes("/issues?")) {
     return ghResp(200, [
       { number: 1, title: "[feedback] A", state: "open", labels: [{ name: "backlog" }], updated_at: "x" },
@@ -45,10 +46,16 @@ globalThis.fetch = async (url, init = {}) => {
     ]);
   }
   if (url.endsWith("/issues") && init.method === "POST") return ghResp(201, { number: 7 });
-  return ghResp(201, {}); // comments, assignees, etc.
+  return ghResp(201, {}); // labels, hooks POST, comments, assignees, etc.
 };
 
 const { default: worker } = await import("../worker.js");
+
+// Warm up once so the per-isolate bootstrap (labels + webhook) runs and won't
+// pollute the per-test fetch-call assertions below.
+await worker.fetch(new Request("https://w.example.com/", { method: "GET" }), {
+  GITHUB_TOKEN: "t", GITHUB_REPO: "o/r", WEBHOOK_SECRET: "whsec",
+});
 
 const baseEnv = {
   GITHUB_TOKEN: "t", GITHUB_REPO: "o/r", OWNER: "me",

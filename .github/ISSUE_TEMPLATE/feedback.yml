@@ -1,0 +1,34 @@
+name: Feedback / Feature request
+description: Captured from an app via the faster-features widget. (You can also file directly here.)
+title: "[feedback] "
+labels: [feedback, pending-triage]
+body:
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type
+      options:
+        - Idea / feature request
+        - Bug report
+    validations:
+      required: true
+  - type: textarea
+    id: message
+    attributes:
+      label: What's the feedback?
+      description: The user's message, verbatim.
+      placeholder: "I wish I could export my data as CSV..."
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Page URL, app version, browser, and any user identifier (filled automatically by the widget).
+      placeholder: |
+        page: /dashboard
+        appVersion: 1.4.2
+        userAgent: ...
+        user: (optional)
+    validations:
+      required: false

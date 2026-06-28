@@ -1,0 +1,49 @@
+name: Notify on new feedback
+
+# When a new feedback issue is opened, assign the configured owner.
+# GitHub Mobile sends that user a push notification on assignment — this is the
+# whole notification mechanism. No Discord, no webhook, no server.
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  assign-owner:
+    # Only react to feedback issues.
+    if: contains(github.event.issue.labels.*.name, 'feedback')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assign configured owner
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let owner = '';
+            try {
+              const cfg = fs.readFileSync('faster-features.config.yml', 'utf8');
+              const m = cfg.match(/^\s*owner:\s*(\S+)/m);
+              if (m) owner = m[1].replace(/['"]/g, '');
+            } catch (e) {
+              core.warning('faster-features.config.yml not found; falling back to issue author.');
+            }
+            // Fallback: assign the repo owner from the org/user that owns the repo.
+            if (!owner) owner = context.repo.owner;
+
+            try {
+              await github.rest.issues.addAssignees({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                assignees: [owner],
+              });
+              core.info(`Assigned ${owner} to issue #${context.issue.number}.`);
+            } catch (e) {
+              core.warning(`Could not assign ${owner}: ${e.message}. Is this user a collaborator?`);
+            }

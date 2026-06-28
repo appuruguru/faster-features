@@ -1,0 +1,18 @@
+name = "faster-features-ingest"
+main = "worker.js"
+compatibility_date = "2026-01-01"
+
+# Non-secret config. Set these to your values (or via the dashboard / `wrangler`).
+[vars]
+# Default repo issues are filed into (owner/name).
+GITHUB_REPO = "your-username/your-repo"
+# Comma-separated list of sites allowed to POST. Use "*" to allow any origin.
+ALLOWED_ORIGINS = "https://your-app.com,http://localhost:3000"
+# Optional: run ONE Worker for several of YOUR repos. Widgets may then send
+# repo:"owner/name", but only values listed here are honored. Leave empty to
+# always use GITHUB_REPO. The GITHUB_TOKEN must have Issues:write on each.
+ALLOWED_REPOS = ""
+
+# Secrets are NOT stored here. Set them with:
+#   wrangler secret put GITHUB_TOKEN
+#   wrangler secret put SHARED_SECRET   # optional

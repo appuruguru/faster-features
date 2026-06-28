@@ -1,0 +1,103 @@
+name: Build approved feature
+
+# Fires when YOU add the `build` label to a feedback issue — your approval gate.
+# What happens next depends on `buildRunner` in faster-features.config.yml:
+#
+#   claude-web  -> posts a ready-to-go kickoff comment. You open Claude Code on
+#                  the web / your phone and say "build issue #N". Runs on your
+#                  subscription. No API token. (Default — keeps this workflow free.)
+#   copilot     -> assigns GitHub Copilot's coding agent to the issue (usage-based).
+#   claude-api  -> runs the Claude Code Action to open a PR automatically.
+#                  Requires the ANTHROPIC_API_KEY secret (pay-per-token).
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  route:
+    if: github.event.label.name == 'build'
+    runs-on: ubuntu-latest
+    outputs:
+      runner: ${{ steps.cfg.outputs.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read buildRunner from config
+        id: cfg
+        run: |
+          runner="claude-web"
+          if [ -f faster-features.config.yml ]; then
+            parsed=$(grep -E '^[[:space:]]*buildRunner:' faster-features.config.yml | head -1 | sed -E 's/.*buildRunner:[[:space:]]*//; s/["'\'' ]//g')
+            if [ -n "$parsed" ]; then runner="$parsed"; fi
+          fi
+          echo "runner=$runner" >> "$GITHUB_OUTPUT"
+          echo "Build runner: $runner"
+
+      - name: Claude Code on the web (manual) — post kickoff comment
+        if: steps.cfg.outputs.runner == 'claude-web'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const n = context.issue.number;
+            const { owner, repo } = context.repo;
+            const body = [
+              `🟢 **Approved for build.** Kick it off on your subscription — no API token needed:`,
+              ``,
+              `1. Open **Claude Code on the web** ([claude.ai/code](https://claude.ai/code)) on your phone or browser.`,
+              `2. Select the \`${owner}/${repo}\` repo.`,
+              `3. Say: *"Implement issue #${n}. Keep the change small and focused; open a PR."*`,
+              ``,
+              `Claude works on a branch and opens a PR for your review.`,
+            ].join('\n');
+            await github.rest.issues.createComment({ owner, repo, issue_number: n, body });
+
+      - name: Copilot coding agent — assign
+        if: steps.cfg.outputs.runner == 'copilot'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const n = context.issue.number;
+            const { owner, repo } = context.repo;
+            try {
+              await github.rest.issues.addAssignees({
+                owner, repo, issue_number: n, assignees: ['copilot-swe-agent'],
+              });
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: n,
+                body: '🤖 Assigned to **GitHub Copilot coding agent**. It will open a draft PR (usage-based billing).',
+              });
+            } catch (e) {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: n,
+                body: `Could not auto-assign Copilot (${e.message}). Assign **Copilot** to this issue manually from the sidebar to start the build.`,
+              });
+            }
+
+  claude-api:
+    needs: route
+    if: needs.route.outputs.runner == 'claude-api'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # Official Anthropic action. Uses an API key (NOT a subscription token —
+      # subscription tokens in CI violate Anthropic's ToS as of 2026-04-04).
+      - name: Implement with Claude Code
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Implement the request described in issue #${{ github.event.issue.number }}.
+            Keep the change small and focused — do not over-engineer or refactor
+            unrelated code. Add or update tests if the project has them. When done,
+            open a pull request that closes the issue.

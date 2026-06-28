@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>faster-features — widget demo</title>
+    <style>
+      body {
+        font: 16px/1.6 system-ui, sans-serif;
+        max-width: 640px;
+        margin: 60px auto;
+        padding: 0 20px;
+        color: #111;
+      }
+      code { background: #f2f2f2; padding: 2px 5px; border-radius: 4px; }
+      .hint { color: #666; }
+    </style>
+  </head>
+  <body>
+    <h1>faster-features widget demo</h1>
+    <p>
+      This page hosts the feedback widget. Click <strong>Feedback</strong>
+      (bottom-right), submit something, and — if your ingest Worker is wired up —
+      a new GitHub issue appears in your repo.
+    </p>
+    <p class="hint">
+      Set <code>data-ingest-url</code> below to your deployed Worker URL. To test
+      the UI without a backend, open the console; failed sends show the error
+      state.
+    </p>
+
+    <!--
+      Replace data-ingest-url with your Worker URL.
+      ../packages/widget/widget.js is the local widget during development.
+    -->
+    <script
+      src="../packages/widget/widget.js"
+      data-ingest-url="https://faster-features-ingest.YOUR-SUBDOMAIN.workers.dev"
+      data-app-version="demo-0.1.0"
+    ></script>
+  </body>
+</html>

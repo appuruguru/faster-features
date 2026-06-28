@@ -1,0 +1,23 @@
+name: Add to backlog board
+
+# Fires when YOU add the `backlog` label — shelves the request on a Project board
+# instead of building it now. Optional: only runs if BACKLOG_PROJECT_URL is set.
+#
+# Setup:
+#   1. Create a GitHub Projects (v2) board.
+#   2. Add a repo variable BACKLOG_PROJECT_URL = the project URL.
+#   3. Add a secret ADD_TO_PROJECT_PAT = a PAT with `project` scope.
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  add-to-board:
+    if: github.event.label.name == 'backlog' && vars.BACKLOG_PROJECT_URL != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/add-to-project@v1.0.2
+        with:
+          project-url: ${{ vars.BACKLOG_PROJECT_URL }}
+          github-token: ${{ secrets.ADD_TO_PROJECT_PAT }}

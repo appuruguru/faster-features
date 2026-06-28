@@ -1,0 +1,50 @@
+# Integrating faster-features (instructions for AI coding agents)
+
+If a developer asks you to "add faster-features," "add a feedback widget," or
+"wire up feedback-to-feature," follow these steps in **their** project. This file
+is written so an AI assistant (Claude Code, Cursor, etc.) can do the integration
+end to end.
+
+## What you are installing
+
+A pipeline: in-app feedback widget → a Cloudflare Worker → GitHub issues →
+notification → label → AI build. The host app only needs the **widget**; the
+Worker and GitHub automation are set up once per repo.
+
+## Steps
+
+1. **Detect the stack.** Look for a framework (React/Next/Vue/plain HTML) to
+   decide which widget form to use.
+
+2. **Add the widget.**
+   - Plain HTML / non-React: add one script tag to the main layout, before
+     `</body>`:
+     ```html
+     <script src="https://YOUR-CDN/widget.js"
+             data-ingest-url="$INGEST_URL"
+             data-app-version="$APP_VERSION"></script>
+     ```
+   - React/Next: copy `packages/widget/Feedback.tsx` into the project's
+     components and render `<FeedbackWidget ingestUrl="$INGEST_URL" />` in the
+     root layout. Ensure the `ff-*` CSS (see `packages/widget/widget.js`) is
+     available, or restyle to match the app.
+
+3. **Set `$INGEST_URL`.** Ask the developer for their deployed Worker URL. If
+   they don't have one, point them to `docs/deploy-ingest.md` (button or
+   `npm run setup`) — do NOT hardcode a token anywhere in the app.
+
+4. **Add repo automation (once).** Copy `.github/ISSUE_TEMPLATE/feedback.yml` and
+   `.github/workflows/{notify,backlog,build}.yml` into the repo, and add
+   `faster-features.config.yml` with `repo`, `owner`, `ingestUrl`, `buildRunner`.
+
+5. **Pick a build runner.** Default `claude-web` needs no secrets. For `claude-api`
+   add an `ANTHROPIC_API_KEY` repo secret. See `docs/build-runners.md`.
+
+6. **Verify.** Build the app, confirm the Feedback button renders, and submit a
+   test from a logged-out browser — a GitHub issue should appear.
+
+## Hard rules
+
+- Never put the GitHub token in client code — it lives only in the Worker.
+- Keep the widget change small: a script tag or one component + one render site.
+- The end user must never need a GitHub account.

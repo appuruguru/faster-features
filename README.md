@@ -48,28 +48,48 @@ Designed around two rules:
 
 ## Quickstart
 
-Just **two steps** — nothing is copied into your app repo (the Worker does the
-GitHub-side work via a webhook it registers itself):
+There are **two jobs**: deploy the Worker once (a few steps), then drop one line
+into your app. Nothing else gets copied into your app repo — the Worker registers
+its own webhook and creates the labels.
 
-1. **Deploy the ingest Worker** — terminal (`cd packages/ingest-worker && npm run
-   setup`) or the no-terminal button. It asks for your repo + owner, deploys, and
-   prints your one-line embed snippet. Full guide:
-   [docs/deploy-ingest.md](docs/deploy-ingest.md).
+**Prerequisites:** a GitHub repo for your app, a free [Cloudflare](https://dash.cloudflare.com)
+account, and [Node.js](https://nodejs.org) installed.
 
-   [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/appuruguru/faster-features/tree/main/packages/ingest-worker)
+### Job 1 — Deploy the ingest Worker (once per app)
 
-   <sub>(The button needs a public repo URL; the terminal path works with a private repo.)</sub>
+Grab just the worker folder (no full clone) and run setup:
 
-2. **Paste the one line** setup prints into your app, before `</body>`:
-   ```html
-   <script src="https://your-worker.workers.dev/widget.js"></script>
-   ```
-   Or let AI do it: the [`/faster-features` skill](skills/README.md) in Claude
-   Code, or point any agent at [AGENTS.md](AGENTS.md).
+```bash
+npx degit appuruguru/faster-features/packages/ingest-worker ff-ingest
+cd ff-ingest
+npm install
+npm run setup
+```
 
-Now feedback flows: submit from the [demo page](examples/demo.html), get a GitHub
-Mobile push, add `build`, and the Worker kicks off your AI runner. *(Only the
-opt-in `claude-api` runner needs the `build.yml` workflow in your repo — the
+`npm run setup` walks you through it and does the rest automatically:
+- **Prompts** for your app repo (`owner/name`), the GitHub login to notify, and a build runner.
+- **GitHub token** — opens the token page; create a fine-grained token on *your app repo* with **Issues: Read/write** and **Webhooks: Read/write**, paste it back. (If you have the GitHub CLI authed, it's grabbed automatically.)
+- **Cloudflare** — opens a browser; click **Allow**.
+- Then it **deploys, creates the labels, registers the webhook**, and **prints your embed snippet**.
+
+> Prefer no terminal? Use the button below. It deploys the Worker and provisions
+> KV/vars in the browser, **but** Cloudflare's button doesn't set secrets — after
+> it deploys you must add `GITHUB_TOKEN` and `WEBHOOK_SECRET` in the Worker's
+> **Settings → Variables and Secrets**. (The CLI path above sets them for you.)
+>
+> [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/appuruguru/faster-features/tree/main/packages/ingest-worker)
+
+### Job 2 — Add one line to your app
+
+Paste the snippet `setup` printed, before `</body>`:
+
+```html
+<script src="https://your-worker.workers.dev/widget.js"></script>
+```
+
+That's it — a Feedback button appears, submissions become triaged issues in your
+repo, you get a GitHub Mobile push, and adding the `build` label kicks off your AI
+runner. *(Only the opt-in `claude-api` runner needs `build.yml` in your repo — the
 default `claude-web` and `copilot` runners don't.)*
 
 ## Cost

@@ -25,12 +25,20 @@ click + paste.
 
 You'll paste two tokens during setup (the script opens both pages for you):
 
-- **Cloudflare API token** — created with the **"Edit Cloudflare Workers"**
-  template. Wrangler needs a token for scripted/non-interactive use; the browser
-  login only works when you run wrangler by hand. Set `CLOUDFLARE_API_TOKEN`
-  beforehand to skip the prompt.
-- **GitHub token** — fine-grained, **Issues** + **Webhooks** read/write on your
-  repo (grabbed automatically if the GitHub CLI is authed).
+- **GitHub token** — must reach *your app repo*:
+  - Simplest: a **classic** token with the **`repo`** scope.
+  - Or fine-grained: **select your repo** under "Only select repositories"
+    (required for private repos), with **Issues** + **Webhooks** read/write.
+  - Grabbed automatically if the GitHub CLI is authed.
+- **Cloudflare API token** — a **Custom token** with **Account** permissions
+  **Workers Scripts: Edit**, **Workers KV Storage: Edit**, **Account Settings:
+  Read**. Don't use the "Edit Cloudflare Workers" *template* — it forces a Zone
+  selection you don't need for `*.workers.dev`. Wrangler requires an API token for
+  scripted use (its browser login only works when you run wrangler by hand). Set
+  `CLOUDFLARE_API_TOKEN` beforehand to skip the prompt. The script auto-detects
+  your account ID, so a token without User-level permissions is fine.
+
+Hitting an error? See [troubleshooting.md](troubleshooting.md).
 
 Prefer to do it by hand? The manual steps are below.
 
@@ -44,10 +52,13 @@ Add this to your fork's README (swap in your repo URL):
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/appuruguru/faster-features/tree/main/packages/ingest-worker)
 ```
 
-Clicking it deploys the Worker to the adopter's **own** Cloudflare account in a
-few browser clicks, prompting for `GITHUB_REPO`, `ALLOWED_ORIGINS`, and the
-`GITHUB_TOKEN` secret on a setup page. Combined with the one-click GitHub token
-page, this is a fully terminal-free setup.
+Clicking it deploys the Worker to the adopter's **own** Cloudflare account and
+provisions the vars + KV in the browser.
+
+> ⚠️ The button does **not** set *secrets*. After it deploys, add `GITHUB_TOKEN`
+> and `WEBHOOK_SECRET` in the Worker's **Settings → Variables and Secrets**, then
+> the Worker self-bootstraps the labels + webhook on first request. The CLI path
+> (`npm run setup`) sets the secrets for you, so it's the smoother option.
 
 > The Worker lives in its own `packages/ingest-worker` subdirectory (a Deploy
 > button requirement — the app must be self-contained in that folder).
@@ -58,12 +69,15 @@ page, this is a fully terminal-free setup.
 
 ### 1. Create a GitHub token
 
-Create a **fine-grained personal access token** scoped to just the target repo:
+Two options:
 
-- Repository access: **only this project's own repo** (the one with the code, so
-  the AI has full context when it builds an approved request).
-- Permissions: **Issues → Read and write**, and **Webhooks → Read and write**
-  (the latter lets setup register the label→build webhook for you).
+- **Classic** (simplest): https://github.com/settings/tokens/new → check the
+  **`repo`** scope. Covers issues, labels, and webhooks.
+- **Fine-grained** (locked-down): scope it to **only this project's own repo**
+  (the one with the code, so the AI has full context when it builds), with
+  **Issues → Read and write** and **Webhooks → Read and write**. ⚠️ You must
+  actually select the repo under "Only select repositories" — missing this returns
+  `404` on label/webhook creation.
 
 Copy the token.
 

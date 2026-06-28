@@ -75,9 +75,14 @@ npm run setup
 
 `npm run setup` walks you through it and does the rest automatically:
 - **Prompts** for your app repo (`owner/name`), the GitHub login to notify, and a build runner.
-- **GitHub token** — opens the token page; create a fine-grained token on *your app repo* with **Issues: Read/write** and **Webhooks: Read/write**, paste it back. (If you have the GitHub CLI authed, it's grabbed automatically.)
-- **Cloudflare API token** — opens the token page; create one with the **"Edit Cloudflare Workers"** template and paste it. (Wrangler needs an API token for scripted setup — its browser login only works when you run wrangler by hand.)
+- **GitHub token** — opens the token page; paste a token that can access **your app repo**:
+  - *Simplest:* a **classic** token with the **`repo`** scope (covers issues, labels, and webhooks).
+  - *Locked-down:* a **fine-grained** token where you **select your repo** under "Only select repositories" (this step is easy to miss and is required for private repos) with **Issues: Read/write** + **Webhooks: Read/write**.
+  - (If the GitHub CLI is authed, it's grabbed automatically.)
+- **Cloudflare API token** — opens the token page; create a **Custom token** with these **Account** permissions: **Workers Scripts: Edit**, **Workers KV Storage: Edit**, **Account Settings: Read**. (Avoid the "Edit Cloudflare Workers" *template* — it forces a Zone/site selection you don't need for `*.workers.dev`.) Wrangler needs an API token for scripted setup; its browser login only works when you run wrangler by hand.
 - Then it **deploys, creates the labels, registers the webhook**, and **prints your embed snippet**.
+
+See [docs/troubleshooting.md](docs/troubleshooting.md) if any step errors.
 
 > Prefer no terminal? Use the button below. It deploys the Worker and provisions
 > KV/vars in the browser, **but** Cloudflare's button doesn't set secrets — after

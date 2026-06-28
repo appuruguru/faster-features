@@ -111,10 +111,11 @@ async function main() {
   if (enableVotes) {
     log("Creating KV namespace for votes…");
     const kv = sh("npx", ["wrangler", "kv", "namespace", "create", "VOTES"]);
-    stdout.write(kv.stdout || "");
-    const kvId = (kv.stdout.match(/id\s*=\s*"([0-9a-f]+)"/) || [])[1];
+    const kvOut = (kv.stdout || "") + (kv.stderr || "");
+    stdout.write(kvOut);
+    const kvId = (kvOut.match(/"?id"?\s*[:=]\s*"([0-9a-f]{8,})"/) || [])[1];
     if (kvId) kvBlock = `\n[[kv_namespaces]]\nbinding = "VOTES"\nid = "${kvId}"\n`;
-    else log("Couldn't auto-detect the KV id — add the [[kv_namespaces]] block manually and re-deploy.");
+    else log("Couldn't auto-detect the KV id from the output above — voting stays off for now; you can add the [[kv_namespaces]] block to wrangler.toml later and redeploy.");
   }
 
   // ---- 6. Write wrangler.toml ----
@@ -133,24 +134,26 @@ async function main() {
     kvBlock,
   ].join("\n"));
 
-  // ---- 7. Secrets (piped via stdin) ----
-  log("Uploading secrets…");
-  if (sh("npx", ["wrangler", "secret", "put", "GITHUB_TOKEN"], { input: token + "\n" }).status !== 0)
-    throw new Error("Failed to set GITHUB_TOKEN secret.");
-  sh("npx", ["wrangler", "secret", "put", "WEBHOOK_SECRET"], { input: webhookSecret + "\n" });
-  if (sharedSecret)
-    sh("npx", ["wrangler", "secret", "put", "SHARED_SECRET"], { input: sharedSecret + "\n" });
-
-  // ---- 8. Deploy ----
+  // ---- 7. Deploy first (so the Worker exists before we set secrets) ----
   log("Deploying…");
   const deploy = sh("npx", ["wrangler", "deploy"]);
-  stdout.write(deploy.stdout || "");
-  if (deploy.status !== 0) {
-    stdout.write(deploy.stderr || "");
-    throw new Error("Deploy failed.");
-  }
+  stdout.write((deploy.stdout || "") + (deploy.stderr || ""));
+  if (deploy.status !== 0) throw new Error("Deploy failed (see output above).");
   const url = (deploy.stdout.match(/https:\/\/[^\s]+\.workers\.dev/) || [])[0];
   if (!url) throw new Error("Deployed, but couldn't detect the Worker URL.");
+
+  // ---- 8. Secrets (the Worker now exists; secrets apply live, no redeploy) ----
+  log("Uploading secrets…");
+  const putSecret = (name, val) => {
+    const r = sh("npx", ["wrangler", "secret", "put", name], { input: val + "\n" });
+    if (r.status !== 0) {
+      stdout.write((r.stdout || "") + (r.stderr || ""));
+      throw new Error(`Failed to set ${name} secret (see output above).`);
+    }
+  };
+  putSecret("GITHUB_TOKEN", token);
+  putSecret("WEBHOOK_SECRET", webhookSecret);
+  if (sharedSecret) putSecret("SHARED_SECRET", sharedSecret);
 
   // ---- 9. Labels + webhook (idempotent) ----
   log("Creating labels…");

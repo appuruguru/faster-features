@@ -46,6 +46,7 @@ Designed around two rules:
 | [`.github/`](.github)                           | Issue template + workflows: notify, backlog, build.          |
 | [`faster-features.config.yml`](faster-features.config.yml) | One config file: repo, owner, ingest URL, build runner. |
 | [`docs/`](docs)                                 | [Deploy the Worker](docs/deploy-ingest.md) · [Build runners](docs/build-runners.md) |
+| [`SECURITY.md`](SECURITY.md)                    | What's stored where; no secrets in git, no PII by default.    |
 | [`examples/demo.html`](examples/demo.html)      | A page hosting the widget for end-to-end testing.            |
 
 ## Quickstart

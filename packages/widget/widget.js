@@ -129,10 +129,11 @@
         hp: hp || "",
         repo: repo,
         context: {
-          page: location.pathname + location.search,
+          // Path only — never the query string, which can carry tokens/PII.
+          page: location.pathname,
           appVersion: appVersion,
           userAgent: navigator.userAgent,
-          user: user,
+          user: user, // only set if the host app explicitly passes one
         },
       }),
     })

@@ -69,14 +69,12 @@ export function FeedbackWidget({
           hp,
           repo,
           context: {
-            page:
-              typeof location !== "undefined"
-                ? location.pathname + location.search
-                : "",
+            // Path only — never the query string, which can carry tokens/PII.
+            page: typeof location !== "undefined" ? location.pathname : "",
             appVersion,
             userAgent:
               typeof navigator !== "undefined" ? navigator.userAgent : "",
-            user,
+            user, // only set if the host app explicitly passes one
           },
         }),
       });

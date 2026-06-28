@@ -17,13 +17,14 @@ Worker and GitHub automation are set up once per repo.
    decide which widget form to use.
 
 2. **Add the widget.**
-   - Plain HTML / non-React: add one script tag to the main layout, before
-     `</body>`:
+   - Plain HTML / non-React: copy `packages/widget/widget.js` into the target
+     app's own static assets, then add one script tag before `</body>`:
      ```html
-     <script src="https://YOUR-CDN/widget.js"
+     <script src="/assets/widget.js"
              data-ingest-url="$INGEST_URL"
              data-app-version="$APP_VERSION"></script>
      ```
+     (This is a private tool — serve the file from the app itself, not a public CDN.)
    - React/Next: copy `packages/widget/Feedback.tsx` into the project's
      components and render `<FeedbackWidget ingestUrl="$INGEST_URL" />` in the
      root layout. Ensure the `ff-*` CSS (see `packages/widget/widget.js`) is

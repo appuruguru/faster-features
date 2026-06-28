@@ -10,16 +10,14 @@ widget → a Cloudflare Worker → GitHub issues → notification → label → 
 plus an optional public roadmap with upvoting. End users never need a GitHub
 account; no secret ever lives in client code.
 
-## Step 0 — Get the package files
+## Step 0 — Locate the package files
 
-If the `faster_features` package isn't already in or beside this project, fetch it:
-
-```bash
-git clone https://github.com/YOUR-USER/faster_features /tmp/faster_features
-```
-
-Use its `packages/`, `.github/`, `docs/`, and `faster-features.config.yml` as the
-source of the files you copy in. (Replace YOUR-USER with the published repo owner.)
+This is a **private/local** tool. Find the `faster_features` checkout on this
+machine (ask the user for the path if unknown — e.g. a sibling directory or a
+cloned private repo). Use its `packages/`, `.github/`, `docs/`, and
+`faster-features.config.yml` as the source of the files you copy in. Do not
+assume a public URL or a CDN — copy `widget.js` / `roadmap.js` into the target
+project (or serve them from the target app's own static assets).
 
 ## Step 1 — Understand the target project
 
@@ -44,9 +42,10 @@ code — it lives only in the Worker.
 
 ## Step 3 — Embed the feedback widget
 
-- Plain HTML / non-React: add one script tag before `</body>` in the main layout:
+- Plain HTML / non-React: copy `widget.js` into the app's static assets, then add
+  one script tag before `</body>` in the main layout:
   ```html
-  <script src="<widget-host>/widget.js" data-ingest-url="INGEST_URL"></script>
+  <script src="/assets/widget.js" data-ingest-url="INGEST_URL"></script>
   ```
 - React/Next: copy `packages/widget/Feedback.tsx` into the components dir and
   render `<FeedbackWidget ingestUrl="INGEST_URL" />` once in the root layout.

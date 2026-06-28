@@ -19,3 +19,10 @@ ROADMAP_LABEL = "roadmap"
 # Secrets are NOT stored here. Set them with:
 #   wrangler secret put GITHUB_TOKEN
 #   wrangler secret put SHARED_SECRET   # optional
+
+# Roadmap upvoting (optional). `npm run setup` creates this for you. Manual:
+#   wrangler kv namespace create VOTES
+# then paste the printed block here:
+# [[kv_namespaces]]
+# binding = "VOTES"
+# id = "..."

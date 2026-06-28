@@ -115,3 +115,16 @@ The column is derived automatically:
 | closed as not planned                | hidden        |
 
 The endpoint is cached ~60s at the edge, so a busy page won't hit GitHub limits.
+
+### Upvoting (optional, no PII)
+
+Let users upvote so you know what to build first. Enable it during
+`npm run setup` (answer yes to "roadmap upvoting") — it creates a free Cloudflare
+KV store that holds **only a count per item**, no identities or emails. The
+roadmap then shows ▲ buttons and sorts each column by votes.
+
+- Double-voting is softly prevented via the browser's `localStorage` — it's a
+  prioritization signal, not a ballot, so it's best-effort by design.
+- If you don't enable it, the roadmap works exactly the same, just without votes
+  (the widget hides the buttons automatically based on the endpoint's response).
+- Note the KV free tier allows ~1,000 writes/day; plenty for a normal roadmap.

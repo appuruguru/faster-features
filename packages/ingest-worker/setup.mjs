@@ -71,6 +71,9 @@ async function main() {
   const useSecret = (await ask("Add a shared secret to deter random POSTs? (y/N):", "n"))
     .toLowerCase()
     .startsWith("y");
+  const enableVotes = (await ask("Enable roadmap upvoting? Creates a free KV store, counts only — no PII. (y/N):", "n"))
+    .toLowerCase()
+    .startsWith("y");
 
   // 4. GitHub token — prefer `gh`, fall back to a one-click page.
   let token = "";
@@ -98,7 +101,21 @@ async function main() {
     console.log(`    Generated shared secret (also pass to the widget as data-key):\n    ${sharedSecret}`);
   }
 
-  // 5. Write wrangler.toml [vars].
+  // 5. Optionally create a KV namespace for roadmap upvotes.
+  let kvBlock = "";
+  if (enableVotes) {
+    log("Creating KV namespace for votes…");
+    const kv = sh("npx", ["wrangler", "kv", "namespace", "create", "VOTES"]);
+    stdout.write(kv.stdout || "");
+    const kvId = (kv.stdout.match(/id\s*=\s*"([0-9a-f]+)"/) || [])[1];
+    if (kvId) {
+      kvBlock = `\n[[kv_namespaces]]\nbinding = "VOTES"\nid = "${kvId}"\n`;
+    } else {
+      log("Couldn't auto-detect the KV id. Add the [[kv_namespaces]] block to wrangler.toml manually, then re-deploy.");
+    }
+  }
+
+  // 6. Write wrangler.toml [vars] (+ KV binding if enabled).
   log("Writing wrangler.toml…");
   const toml = [
     `name = "faster-features-ingest"`,
@@ -108,11 +125,12 @@ async function main() {
     `[vars]`,
     `GITHUB_REPO = "${repo}"`,
     `ALLOWED_ORIGINS = "${origins}"`,
-    ``,
+    `ROADMAP_LABEL = "roadmap"`,
+    kvBlock,
   ].join("\n");
   await writeFile(wranglerToml, toml);
 
-  // 6. Upload secrets (value piped via stdin — non-interactive).
+  // 7. Upload secrets (value piped via stdin — non-interactive).
   log("Uploading GITHUB_TOKEN secret…");
   if (sh("npx", ["wrangler", "secret", "put", "GITHUB_TOKEN"], { input: token + "\n" }).status !== 0)
     throw new Error("Failed to set GITHUB_TOKEN secret.");
@@ -121,7 +139,7 @@ async function main() {
     sh("npx", ["wrangler", "secret", "put", "SHARED_SECRET"], { input: sharedSecret + "\n" });
   }
 
-  // 7. Deploy and capture the URL.
+  // 8. Deploy and capture the URL.
   log("Deploying…");
   const deploy = sh("npx", ["wrangler", "deploy"]);
   stdout.write(deploy.stdout || "");
@@ -131,7 +149,7 @@ async function main() {
   }
   const url = (deploy.stdout.match(/https:\/\/[^\s]+\.workers\.dev/) || [])[0];
 
-  // 8. Write the URL back into faster-features.config.yml.
+  // 9. Write the URL back into faster-features.config.yml.
   if (url && existsSync(rootConfig)) {
     log(`Writing ingestUrl into faster-features.config.yml…`);
     let cfg = await readFile(rootConfig, "utf8");

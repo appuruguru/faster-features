@@ -32,6 +32,11 @@ export default {
     if (request.method !== "POST") {
       return json({ error: "Method not allowed" }, 405, cors);
     }
+    // Public upvote endpoint for the roadmap. Optional: only active if a VOTES
+    // KV namespace is bound. Stores a count per issue — no identities, no PII.
+    if (new URL(request.url).pathname.replace(/\/$/, "").endsWith("/vote")) {
+      return handleVote(request, env);
+    }
     // Reject origins we don't recognize (when an allow-list is configured).
     if (!originAllowed(origin, env)) {
       return json({ error: "Origin not allowed" }, 403, cors);
@@ -144,6 +149,9 @@ async function handleRoadmap(request, env) {
   }
 
   const issues = await resp.json();
+  // Vote counts (optional). One KV read for the whole map if VOTES is bound.
+  const votes = env.VOTES ? await readVotes(env, repo) : null;
+
   const items = issues
     .filter((i) => !i.pull_request) // issues only
     .map((i) => {
@@ -157,18 +165,66 @@ async function handleRoadmap(request, env) {
       } else if (names.includes("backlog")) {
         status = "planned";
       }
-      return {
+      const item = {
         id: i.number,
         title: i.title.replace(/^\[feedback\]\s*/i, ""),
         status, // planned | in_progress | shipped
         updatedAt: i.updated_at,
       };
+      if (votes) item.votes = votes[i.number] || 0; // present only when enabled
+      return item;
     })
     .filter(Boolean);
 
-  const out = json({ items }, 200, openCors);
+  const out = json({ items, voting: !!env.VOTES }, 200, openCors);
   await cache.put(cacheKey, out.clone());
   return out;
+}
+
+const VOTES_KEY = (repo) => `votes:${repo}`;
+
+async function readVotes(env, repo) {
+  try {
+    return (await env.VOTES.get(VOTES_KEY(repo), { type: "json" })) || {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * POST /vote — increment the vote count for one roadmap issue.
+ * Stores counts only (no identity). Best-effort dedup is done client-side via
+ * localStorage; this endpoint just tallies. Open to any origin (public action).
+ */
+async function handleVote(request, env) {
+  const openCors = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+  };
+  if (!env.VOTES) {
+    return json({ error: "Voting not enabled" }, 501, openCors);
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON" }, 400, openCors);
+  }
+
+  const id = Number(body.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return json({ error: "Invalid id" }, 400, openCors);
+  }
+  const repo = resolveRepo(body.repo, env);
+  if (!repo) return json({ error: "Repo not allowed" }, 400, openCors);
+
+  const key = VOTES_KEY(repo);
+  const map = (await readVotes(env, repo)) || {};
+  map[id] = (map[id] || 0) + 1;
+  await env.VOTES.put(key, JSON.stringify(map));
+
+  return json({ ok: true, id, votes: map[id] }, 200, openCors);
 }
 
 function buildIssue({ message, type, ctx }) {

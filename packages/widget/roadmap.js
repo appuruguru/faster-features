@@ -43,6 +43,7 @@
   }
   mount.innerHTML = '<div class="ffr-loading">Loading roadmap…</div>';
 
+  var voteUrl = ingestUrl.replace(/\/$/, "") + "/vote";
   var url = ingestUrl + (repo ? "?repo=" + encodeURIComponent(repo) : "");
   fetch(url)
     .then(function (r) {
@@ -50,20 +51,24 @@
       return r.json();
     })
     .then(function (data) {
-      render(data.items || []);
+      render(data.items || [], !!data.voting);
     })
     .catch(function () {
       mount.innerHTML = '<div class="ffr-loading">Roadmap unavailable right now.</div>';
     });
 
-  function render(items) {
+  function votedKey(id) {
+    return "ffv:" + (repo || "default") + ":" + id;
+  }
+
+  function render(items, voting) {
     var board = el("div", { class: "ffr-board" });
     COLUMNS.forEach(function (col) {
       var inCol = items.filter(function (i) { return i.status === col.key; });
+      // Highest-voted first so priority is obvious at a glance.
+      if (voting) inCol.sort(function (a, b) { return (b.votes || 0) - (a.votes || 0); });
       var cards = inCol.length
-        ? inCol.map(function (i) {
-            return el("div", { class: "ffr-card" }, [i.title]);
-          })
+        ? inCol.map(function (i) { return card(i, voting); })
         : [el("div", { class: "ffr-empty" }, ["Nothing here yet."])];
       board.appendChild(
         el("div", { class: "ffr-col" }, [
@@ -76,6 +81,39 @@
     });
     mount.innerHTML = "";
     mount.appendChild(board);
+  }
+
+  function card(item, voting) {
+    var title = el("div", { class: "ffr-card-title" }, [item.title]);
+    if (!voting) return el("div", { class: "ffr-card" }, [title]);
+
+    var already = false;
+    try { already = !!localStorage.getItem(votedKey(item.id)); } catch (e) {}
+    var count = el("span", { class: "ffr-vote-count" }, [String(item.votes || 0)]);
+    var btn = el("button", {
+      class: "ffr-vote" + (already ? " ffr-vote--on" : ""),
+      type: "button",
+      title: "Upvote",
+    }, ["▲", count]);
+    if (already) btn.disabled = true;
+
+    btn.addEventListener("click", function () {
+      if (btn.disabled) return;
+      btn.disabled = true;
+      btn.classList.add("ffr-vote--on");
+      count.textContent = String((item.votes || 0) + 1); // optimistic
+      try { localStorage.setItem(votedKey(item.id), "1"); } catch (e) {}
+      fetch(voteUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: item.id, repo: repo }),
+      })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) { if (d && typeof d.votes === "number") count.textContent = String(d.votes); })
+        .catch(function () {});
+    });
+
+    return el("div", { class: "ffr-card" }, [title, btn]);
   }
 
   function el(tag, attrs, children) {
@@ -95,10 +133,15 @@
       ".ffr-col{background:#f6f6f7;border-radius:12px;padding:12px}" +
       ".ffr-col-head{display:flex;align-items:center;justify-content:space-between;font-weight:700;margin-bottom:10px}" +
       ".ffr-count{background:#e2e2e5;border-radius:999px;padding:1px 8px;font-size:12px;font-weight:600}" +
-      ".ffr-card{background:#fff;border:1px solid #e5e5e8;border-radius:8px;padding:10px 12px;margin-bottom:8px;line-height:1.4}" +
+      ".ffr-card{display:flex;align-items:flex-start;gap:8px;background:#fff;border:1px solid #e5e5e8;border-radius:8px;padding:10px 12px;margin-bottom:8px;line-height:1.4}" +
+      ".ffr-card-title{flex:1}" +
+      ".ffr-vote{display:flex;flex-direction:column;align-items:center;min-width:38px;border:1px solid #ddd;border-radius:8px;background:#fafafa;color:#444;cursor:pointer;font:600 11px system-ui;padding:4px 0;line-height:1.2}" +
+      ".ffr-vote:hover{border-color:#aaa}" +
+      ".ffr-vote--on{background:#111;color:#fff;border-color:#111;cursor:default}" +
+      ".ffr-vote-count{font-size:13px}" +
       ".ffr-empty{color:#999;font-size:13px;padding:6px 2px}" +
       ".ffr-loading{color:#888;font:14px system-ui;padding:12px}" +
-      "@media(prefers-color-scheme:dark){.ffr-col{background:#1f1f22}.ffr-count{background:#3a3a3c;color:#eee}.ffr-card{background:#2a2a2d;border-color:#3a3a3c;color:#f2f2f2}}";
+      "@media(prefers-color-scheme:dark){.ffr-col{background:#1f1f22}.ffr-count{background:#3a3a3c;color:#eee}.ffr-card{background:#2a2a2d;border-color:#3a3a3c;color:#f2f2f2}.ffr-vote{background:#3a3a3c;border-color:#4a4a4c;color:#eee}.ffr-vote--on{background:#f2f2f2;color:#111}}";
     var s = document.createElement("style");
     s.textContent = css;
     document.head.appendChild(s);

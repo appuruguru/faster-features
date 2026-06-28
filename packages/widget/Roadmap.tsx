@@ -15,6 +15,7 @@ interface Item {
   title: string;
   status: Status;
   updatedAt: string;
+  votes?: number;
 }
 
 const COLUMNS: { key: Status; title: string }[] = [
@@ -31,7 +32,12 @@ export interface RoadmapProps {
 
 export function Roadmap({ ingestUrl, repo }: RoadmapProps) {
   const [items, setItems] = useState<Item[] | null>(null);
+  const [voting, setVoting] = useState(false);
+  const [voted, setVoted] = useState<Record<number, boolean>>({});
   const [error, setError] = useState(false);
+
+  const voteUrl = ingestUrl.replace(/\/$/, "") + "/vote";
+  const votedKey = (id: number) => `ffv:${repo || "default"}:${id}`;
 
   useEffect(() => {
     const url = ingestUrl + (repo ? `?repo=${encodeURIComponent(repo)}` : "");
@@ -40,17 +46,48 @@ export function Roadmap({ ingestUrl, repo }: RoadmapProps) {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       })
-      .then((d) => setItems(d.items || []))
+      .then((d) => {
+        setItems(d.items || []);
+        setVoting(!!d.voting);
+      })
       .catch(() => setError(true));
   }, [ingestUrl, repo]);
 
+  const upvote = (id: number) => {
+    if (voted[id]) return;
+    setVoted((v) => ({ ...v, [id]: true }));
+    setItems((cur) =>
+      cur ? cur.map((i) => (i.id === id ? { ...i, votes: (i.votes || 0) + 1 } : i)) : cur,
+    );
+    try { localStorage.setItem(votedKey(id), "1"); } catch {}
+    fetch(voteUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, repo }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d && typeof d.votes === "number")
+          setItems((cur) =>
+            cur ? cur.map((i) => (i.id === id ? { ...i, votes: d.votes } : i)) : cur,
+          );
+      })
+      .catch(() => {});
+  };
+
   if (error) return <div className="ffr-loading">Roadmap unavailable right now.</div>;
   if (!items) return <div className="ffr-loading">Loading roadmap…</div>;
+
+  const hasVoted = (id: number) => {
+    if (voted[id]) return true;
+    try { return !!localStorage.getItem(votedKey(id)); } catch { return false; }
+  };
 
   return (
     <div className="ffr-board">
       {COLUMNS.map((col) => {
         const inCol = items.filter((i) => i.status === col.key);
+        if (voting) inCol.sort((a, b) => (b.votes || 0) - (a.votes || 0));
         return (
           <div className="ffr-col" key={col.key}>
             <div className="ffr-col-head">
@@ -60,7 +97,18 @@ export function Roadmap({ ingestUrl, repo }: RoadmapProps) {
             {inCol.length ? (
               inCol.map((i) => (
                 <div className="ffr-card" key={i.id}>
-                  {i.title}
+                  <div className="ffr-card-title">{i.title}</div>
+                  {voting && (
+                    <button
+                      type="button"
+                      className={"ffr-vote" + (hasVoted(i.id) ? " ffr-vote--on" : "")}
+                      disabled={hasVoted(i.id)}
+                      onClick={() => upvote(i.id)}
+                      title="Upvote"
+                    >
+                      ▲<span className="ffr-vote-count">{i.votes || 0}</span>
+                    </button>
+                  )}
                 </div>
               ))
             ) : (

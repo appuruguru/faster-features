@@ -103,12 +103,17 @@ async function main() {
     shOut("npm", ["install"]);
   }
 
-  // ---- 4. Validate the Cloudflare token ----
+  // ---- 4. Validate token + capture account id. Setting CLOUDFLARE_ACCOUNT_ID
+  //          lets wrangler skip the /memberships lookup, which needs a broader
+  //          User-level permission the token usually doesn't have. ----
   log("Checking Cloudflare token…");
   const who = sh("npx", ["wrangler", "whoami"], { env: wenv });
-  if (who.status !== 0) {
+  const acctId = ((who.stdout || "") + (who.stderr || "")).match(/\b[0-9a-f]{32}\b/);
+  if (acctId) {
+    wenv.CLOUDFLARE_ACCOUNT_ID = acctId[0];
+  } else {
     stdout.write((who.stdout || "") + (who.stderr || ""));
-    throw new Error("Cloudflare token didn't authenticate — make sure it uses the 'Edit Cloudflare Workers' template.");
+    throw new Error("Couldn't read your Cloudflare account id — does the token have Account Settings: Read?");
   }
 
   const webhookSecret = uuid();

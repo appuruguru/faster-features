@@ -5,11 +5,19 @@
  * The output (assets.js) is committed so deploys (button or CLI) need no build.
  */
 import { readFile, writeFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const widgetDir = join(here, "..", "widget");
+
+// Standalone worker copies (e.g. from `degit packages/ingest-worker`) don't ship
+// the widget sources — that's fine, assets.js is committed. Skip gracefully.
+if (!existsSync(join(widgetDir, "widget.js"))) {
+  console.log("Widget sources not present (standalone copy) — using committed assets.js.");
+  process.exit(0);
+}
 
 const widget = await readFile(join(widgetDir, "widget.js"), "utf8");
 const roadmap = await readFile(join(widgetDir, "roadmap.js"), "utf8");

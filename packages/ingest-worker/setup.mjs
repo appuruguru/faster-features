@@ -150,7 +150,11 @@ async function main() {
   const url = (deploy.stdout.match(/https:\/\/[^\s]+\.workers\.dev/) || [])[0];
   if (!url) throw new Error("Deployed, but couldn't detect the Worker URL.");
 
-  // 10. Register the GitHub webhook (so labels drive the build with no in-repo file).
+  // 10. Create the pipeline labels in the repo (idempotent).
+  log("Creating labels…");
+  await createLabels(repo, token);
+
+  // 11. Register the GitHub webhook (so labels drive the build with no in-repo file).
   log("Registering GitHub webhook…");
   try {
     const result = await registerWebhook(repo, token, webhookSecret, url);
@@ -161,7 +165,7 @@ async function main() {
     console.log(`    content type application/json, event "Issues", secret = the WEBHOOK_SECRET.`);
   }
 
-  // 11. Write the URL back into faster-features.config.yml.
+  // 12. Write the URL back into faster-features.config.yml.
   if (existsSync(rootConfig)) {
     let cfg = await readFile(rootConfig, "utf8");
     cfg = cfg.replace(/^(\s*ingestUrl:).*$/m, `$1 ${url}`);
@@ -171,7 +175,7 @@ async function main() {
     await writeFile(rootConfig, cfg);
   }
 
-  // 12. Done — print the copy-paste snippet.
+  // 13. Done — print the copy-paste snippet.
   console.log("\n✅ Done.\n");
   console.log("   Paste this one line into your app (before </body>):\n");
   console.log(`   <script src="${url}/widget.js"></script>\n`);
@@ -180,6 +184,35 @@ async function main() {
   console.log(`   <script src="${url}/roadmap.js"></script>\n`);
   if (sharedSecret) {
     console.log(`   (Shared secret on: add data-key="${sharedSecret}" to the widget script.)\n`);
+  }
+}
+
+const LABELS = [
+  { name: "feedback", color: "0e8a16", description: "Incoming user feedback" },
+  { name: "pending-triage", color: "fbca04", description: "Awaiting your review" },
+  { name: "backlog", color: "c5def5", description: "Shelved on the roadmap as Planned" },
+  { name: "build", color: "1d76db", description: "Approved - kicks off the AI build" },
+  { name: "roadmap", color: "5319e7", description: "Show on the public roadmap" },
+  { name: "in-progress", color: "d93f0b", description: "Being worked on" },
+];
+
+async function createLabels(repo, token) {
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    Accept: "application/vnd.github+json",
+    "User-Agent": "faster-features-setup",
+    "Content-Type": "application/json",
+  };
+  for (const label of LABELS) {
+    const resp = await fetch(`https://api.github.com/repos/${repo}/labels`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(label),
+    });
+    // 201 created, 422 already exists — both fine.
+    if (!resp.ok && resp.status !== 422) {
+      console.log(`    ⚠ label ${label.name}: ${resp.status}`);
+    }
   }
 }
 

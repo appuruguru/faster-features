@@ -10,14 +10,18 @@ widget → a Cloudflare Worker → GitHub issues → notification → label → 
 plus an optional public roadmap with upvoting. End users never need a GitHub
 account; no secret ever lives in client code.
 
-## Step 0 — Locate the package files
+## Step 0 — Get the package files
 
-This is a **private/local** tool. Find the `faster_features` checkout on this
-machine (ask the user for the path if unknown — e.g. a sibling directory or a
-cloned private repo). Use its `packages/`, `.github/`, `docs/`, and
-`faster-features.config.yml` as the source of the files you copy in. Do not
-assume a public URL or a CDN — copy `widget.js` / `roadmap.js` into the target
-project (or serve them from the target app's own static assets).
+The tool is public at https://github.com/appuruguru/faster-features. If it isn't
+already on this machine, grab just the worker folder (no full clone needed):
+
+```bash
+npx degit appuruguru/faster-features/packages/ingest-worker ff-ingest
+```
+
+The widget is served by the Worker itself (`/widget.js`), so you don't copy the
+widget file into the target app — the embed is a one-line `<script>` pointing at
+the deployed Worker.
 
 ## Step 1 — Understand the target project
 

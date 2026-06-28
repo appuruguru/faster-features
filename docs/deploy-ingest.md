@@ -35,7 +35,7 @@ For adopters who'd rather never open a terminal, use Cloudflare's
 Add this to your fork's README (swap in your repo URL):
 
 ```md
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/YOUR-USER/faster_features/tree/main/packages/ingest-worker)
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/appuruguru/faster-features/tree/main/packages/ingest-worker)
 ```
 
 Clicking it deploys the Worker to the adopter's **own** Cloudflare account in a

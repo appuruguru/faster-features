@@ -56,7 +56,7 @@ GitHub-side work via a webhook it registers itself):
    prints your one-line embed snippet. Full guide:
    [docs/deploy-ingest.md](docs/deploy-ingest.md).
 
-   [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/YOUR-USER/faster_features/tree/main/packages/ingest-worker)
+   [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/appuruguru/faster-features/tree/main/packages/ingest-worker)
 
    <sub>(The button needs a public repo URL; the terminal path works with a private repo.)</sub>
 

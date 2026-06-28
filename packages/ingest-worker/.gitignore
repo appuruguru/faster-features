@@ -1,0 +1,8 @@
+# Ships with the worker folder (via degit) so nesting it in an existing project
+# never requires touching that project's own .gitignore.
+node_modules/
+.wrangler/
+.dev.vars
+.env
+.env.*
+*.log

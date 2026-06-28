@@ -20,9 +20,12 @@ ROADMAP_LABEL = "roadmap"
 #   wrangler secret put GITHUB_TOKEN
 #   wrangler secret put SHARED_SECRET   # optional
 
-# Roadmap upvoting (optional). `npm run setup` creates this for you. Manual:
-#   wrangler kv namespace create VOTES
-# then paste the printed block here:
-# [[kv_namespaces]]
-# binding = "VOTES"
-# id = "..."
+# Roadmap upvoting. Both setup methods create this KV store automatically:
+#   • Deploy-to-Cloudflare button: provisions it during the browser flow.
+#   • npm run setup: creates and fills the id for you.
+# To DISABLE upvoting, delete this whole block — the Worker turns voting off
+# automatically when VOTES isn't bound. (A bare `wrangler deploy` needs a real
+# id here, so use `npm run setup` or the button rather than deploying by hand.)
+[[kv_namespaces]]
+binding = "VOTES"
+id = "replace-me"

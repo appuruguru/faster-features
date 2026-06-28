@@ -60,8 +60,8 @@ Designed around two rules:
    Full guide: [docs/deploy-ingest.md](docs/deploy-ingest.md).
 3. **Embed the widget** in your app → [packages/widget/README.md](packages/widget/README.md),
    pointing `data-ingest-url` at your Worker. One `<script>` tag, or the React
-   component. Or just tell your AI assistant: "integrate faster-features" — see
-   [AGENTS.md](AGENTS.md).
+   component. Or let AI do it: run the [`/faster-features` skill](skills/README.md)
+   in Claude Code, or point any agent at [AGENTS.md](AGENTS.md).
 4. **Pick a build runner** (`buildRunner` in the config) →
    [docs/build-runners.md](docs/build-runners.md). Default `claude-web` needs no
    secrets and no per-token cost.

@@ -76,7 +76,7 @@ npm run setup
 `npm run setup` walks you through it and does the rest automatically:
 - **Prompts** for your app repo (`owner/name`), the GitHub login to notify, and a build runner.
 - **GitHub token** — opens the token page; create a fine-grained token on *your app repo* with **Issues: Read/write** and **Webhooks: Read/write**, paste it back. (If you have the GitHub CLI authed, it's grabbed automatically.)
-- **Cloudflare** — opens a browser; click **Allow**.
+- **Cloudflare API token** — opens the token page; create one with the **"Edit Cloudflare Workers"** template and paste it. (Wrangler needs an API token for scripted setup — its browser login only works when you run wrangler by hand.)
 - Then it **deploys, creates the labels, registers the webhook**, and **prints your embed snippet**.
 
 > Prefer no terminal? Use the button below. It deploys the Worker and provisions

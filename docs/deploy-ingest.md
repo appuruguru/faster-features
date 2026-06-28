@@ -23,12 +23,14 @@ URL back into `faster-features.config.yml`. It will ask for your repo
 have the GitHub CLI (`gh`) authorized — otherwise it opens the token page for one
 click + paste.
 
-Two prompts stay interactive by design:
+You'll paste two tokens during setup (the script opens both pages for you):
 
-- **Cloudflare authorization** — a browser "Allow" click. Skip it entirely by
-  exporting a `CLOUDFLARE_API_TOKEN` before running.
-- **GitHub token approval** — invisible if `gh auth login` is done; otherwise one
-  click on the pre-filled page the script opens.
+- **Cloudflare API token** — created with the **"Edit Cloudflare Workers"**
+  template. Wrangler needs a token for scripted/non-interactive use; the browser
+  login only works when you run wrangler by hand. Set `CLOUDFLARE_API_TOKEN`
+  beforehand to skip the prompt.
+- **GitHub token** — fine-grained, **Issues** + **Webhooks** read/write on your
+  repo (grabbed automatically if the GitHub CLI is authed).
 
 Prefer to do it by hand? The manual steps are below.
 

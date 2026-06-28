@@ -77,7 +77,21 @@ async function main() {
   }
   if (!token) throw new Error("A GitHub token is required.");
 
-  rl.close(); // done with stdin — safe to run interactive subprocesses now
+  // Cloudflare API token — wrangler requires this for non-interactive (scripted)
+  // use; its browser OAuth login does NOT work when wrangler is run from a script.
+  let cfToken = process.env.CLOUDFLARE_API_TOKEN || "";
+  if (!cfToken) {
+    log("Opening the Cloudflare API token page.");
+    console.log("    Create Token → use the 'Edit Cloudflare Workers' template → Continue → Create → copy it.");
+    openInBrowser("https://dash.cloudflare.com/profile/api-tokens");
+    cfToken = await ask("Paste the Cloudflare API token:");
+  }
+  if (!cfToken) throw new Error("A Cloudflare API token is required.");
+
+  rl.close(); // done with stdin
+
+  // Every wrangler call runs with the token in its environment.
+  const wenv = { ...process.env, CLOUDFLARE_API_TOKEN: cfToken };
 
   // ---- 2. Bundle widgets into assets.js (no-op for standalone copies) ----
   log("Bundling widgets…");
@@ -89,14 +103,12 @@ async function main() {
     shOut("npm", ["install"]);
   }
 
-  // ---- 4. Cloudflare auth (interactive only if needed) ----
-  if (process.env.CLOUDFLARE_API_TOKEN) {
-    log("Using CLOUDFLARE_API_TOKEN from environment.");
-  } else if (sh("npx", ["wrangler", "whoami"]).status !== 0) {
-    log("Authorizing Cloudflare — a browser will open. Click Allow.");
-    shTTY("npx", ["wrangler", "login"]);
-  } else {
-    log("Cloudflare already authorized.");
+  // ---- 4. Validate the Cloudflare token ----
+  log("Checking Cloudflare token…");
+  const who = sh("npx", ["wrangler", "whoami"], { env: wenv });
+  if (who.status !== 0) {
+    stdout.write((who.stdout || "") + (who.stderr || ""));
+    throw new Error("Cloudflare token didn't authenticate — make sure it uses the 'Edit Cloudflare Workers' template.");
   }
 
   const webhookSecret = uuid();
@@ -110,7 +122,7 @@ async function main() {
   let kvBlock = "";
   if (enableVotes) {
     log("Creating KV namespace for votes…");
-    const kv = sh("npx", ["wrangler", "kv", "namespace", "create", "VOTES"]);
+    const kv = sh("npx", ["wrangler", "kv", "namespace", "create", "VOTES"], { env: wenv });
     const kvOut = (kv.stdout || "") + (kv.stderr || "");
     stdout.write(kvOut);
     const kvId = (kvOut.match(/"?id"?\s*[:=]\s*"([0-9a-f]{8,})"/) || [])[1];
@@ -136,7 +148,7 @@ async function main() {
 
   // ---- 7. Deploy first (so the Worker exists before we set secrets) ----
   log("Deploying…");
-  const deploy = sh("npx", ["wrangler", "deploy"]);
+  const deploy = sh("npx", ["wrangler", "deploy"], { env: wenv });
   stdout.write((deploy.stdout || "") + (deploy.stderr || ""));
   if (deploy.status !== 0) throw new Error("Deploy failed (see output above).");
   const url = (deploy.stdout.match(/https:\/\/[^\s]+\.workers\.dev/) || [])[0];
@@ -145,7 +157,7 @@ async function main() {
   // ---- 8. Secrets (the Worker now exists; secrets apply live, no redeploy) ----
   log("Uploading secrets…");
   const putSecret = (name, val) => {
-    const r = sh("npx", ["wrangler", "secret", "put", name], { input: val + "\n" });
+    const r = sh("npx", ["wrangler", "secret", "put", name], { input: val + "\n", env: wenv });
     if (r.status !== 0) {
       stdout.write((r.stdout || "") + (r.stderr || ""));
       throw new Error(`Failed to set ${name} secret (see output above).`);

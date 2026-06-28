@@ -12,6 +12,10 @@ From `packages/ingest-worker`:
 npm run setup
 ```
 
+> **Windows / PowerShell:** if PowerShell blocks `npm`/`npx` with an *execution
+> policy* error, run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`
+> once in that window and retry (affects only that session).
+
 This automates everything scriptable — installing wrangler, configuring
 `wrangler.toml`, uploading the token secret, deploying, and writing the Worker
 URL back into `faster-features.config.yml`. It will ask for your repo

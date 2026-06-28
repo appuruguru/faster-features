@@ -66,6 +66,13 @@ npm install
 npm run setup
 ```
 
+> **Windows / PowerShell:** these commands work as-is. If PowerShell blocks
+> `npm`/`npx` with an *execution policy* error, run this once in that window and
+> retry (it only affects the current session):
+> ```powershell
+> Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+> ```
+
 `npm run setup` walks you through it and does the rest automatically:
 - **Prompts** for your app repo (`owner/name`), the GitHub login to notify, and a build runner.
 - **GitHub token** — opens the token page; create a fine-grained token on *your app repo* with **Issues: Read/write** and **Webhooks: Read/write**, paste it back. (If you have the GitHub CLI authed, it's grabbed automatically.)

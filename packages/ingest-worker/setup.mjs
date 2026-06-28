@@ -126,13 +126,25 @@ async function main() {
   // ---- 5. Optional KV namespace for upvotes ----
   let kvBlock = "";
   if (enableVotes) {
-    log("Creating KV namespace for votes…");
-    const kv = sh("npx", ["wrangler", "kv", "namespace", "create", "VOTES"], { env: wenv });
-    const kvOut = (kv.stdout || "") + (kv.stderr || "");
-    stdout.write(kvOut);
-    const kvId = (kvOut.match(/"?id"?\s*[:=]\s*"([0-9a-f]{8,})"/) || [])[1];
+    log("Setting up KV namespace for votes…");
+    let kvId = "";
+    // Reuse an existing namespace so re-runs don't pile up duplicates.
+    const list = sh("npx", ["wrangler", "kv", "namespace", "list"], { env: wenv });
+    const arr = (list.stdout || "").match(/\[\s*{[\s\S]*}\s*\]/);
+    if (arr) {
+      try {
+        const found = JSON.parse(arr[0]).find((n) => /VOTES$/.test(n.title || ""));
+        if (found) kvId = found.id;
+      } catch {}
+    }
+    if (!kvId) {
+      const kv = sh("npx", ["wrangler", "kv", "namespace", "create", "VOTES"], { env: wenv });
+      const kvOut = (kv.stdout || "") + (kv.stderr || "");
+      stdout.write(kvOut);
+      kvId = (kvOut.match(/"?id"?\s*[:=]\s*"([0-9a-f]{8,})"/) || [])[1] || "";
+    }
     if (kvId) kvBlock = `\n[[kv_namespaces]]\nbinding = "VOTES"\nid = "${kvId}"\n`;
-    else log("Couldn't auto-detect the KV id from the output above — voting stays off for now; you can add the [[kv_namespaces]] block to wrangler.toml later and redeploy.");
+    else log("Couldn't determine the KV id — voting stays off; add the [[kv_namespaces]] block later and redeploy.");
   }
 
   // ---- 6. Write wrangler.toml ----

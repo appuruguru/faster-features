@@ -43,6 +43,11 @@ Worker and GitHub automation are set up once per repo.
 6. **Verify.** Build the app, confirm the Feedback button renders, and submit a
    test from a logged-out browser — a GitHub issue should appear.
 
+7. **Optional — public roadmap.** If the developer wants users to see request
+   status, add a roadmap page using `packages/widget/roadmap.js` (or
+   `Roadmap.tsx`) pointed at the same `$INGEST_URL`. Items appear only once the
+   dev adds the `roadmap` label; the endpoint exposes title + status only.
+
 ## Hard rules
 
 - Never put the GitHub token in client code — it lives only in the Worker.

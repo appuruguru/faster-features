@@ -14,6 +14,9 @@ labels:
   intake: [feedback, pending-triage] # applied when feedback first lands
   backlog: backlog                   # you add this to shelve it on the board
   build: build                       # you add this to kick off a build
+  roadmap: roadmap                   # you add this to show it on the public roadmap
+                                     # column derived from status: backlog→Planned,
+                                     # build/in-progress→In progress, closed→Shipped
 
 # Where the embeddable widget sends feedback. This is YOUR deployed
 # Cloudflare Worker URL (see packages/ingest-worker + docs/deploy-ingest.md).

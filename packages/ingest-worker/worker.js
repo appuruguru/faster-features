@@ -24,6 +24,11 @@ export default {
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: cors });
     }
+    // Public read endpoint for the roadmap/status page. GET is open to any
+    // origin (it only returns dev-curated, safe fields — no bodies, no PII).
+    if (request.method === "GET") {
+      return handleRoadmap(request, env);
+    }
     if (request.method !== "POST") {
       return json({ error: "Method not allowed" }, 405, cors);
     }
@@ -96,6 +101,75 @@ export default {
     return json({ ok: true, issue: created.number }, 201, cors);
   },
 };
+
+/**
+ * GET handler: returns the public roadmap as JSON.
+ *
+ * Only issues the dev opts in (via the ROADMAP_LABEL, default "roadmap") are
+ * shown, and only safe fields — title + derived status. Bodies, reporters, and
+ * raw context are never exposed. Cached briefly to spare the GitHub API.
+ */
+async function handleRoadmap(request, env) {
+  const openCors = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Cache-Control": "public, max-age=60",
+  };
+
+  const url = new URL(request.url);
+  const repo = resolveRepo(url.searchParams.get("repo"), env);
+  if (!repo) return json({ error: "Repo not allowed" }, 400, openCors);
+
+  // Short edge cache so a busy page doesn't hammer the GitHub API.
+  const cache = caches.default;
+  const cacheKey = new Request(request.url, { method: "GET" });
+  const cached = await cache.match(cacheKey);
+  if (cached) return cached;
+
+  const label = (env.ROADMAP_LABEL || "roadmap").trim();
+  const [owner, name] = repo.split("/");
+  const api =
+    `https://api.github.com/repos/${owner}/${name}/issues` +
+    `?state=all&per_page=100&labels=${encodeURIComponent(label)}`;
+
+  const resp = await fetch(api, {
+    headers: {
+      Authorization: `Bearer ${env.GITHUB_TOKEN}`,
+      Accept: "application/vnd.github+json",
+      "User-Agent": "faster-features-ingest",
+    },
+  });
+  if (!resp.ok) {
+    return json({ error: "Failed to load roadmap" }, 502, openCors);
+  }
+
+  const issues = await resp.json();
+  const items = issues
+    .filter((i) => !i.pull_request) // issues only
+    .map((i) => {
+      const names = (i.labels || []).map((l) => (l.name || l).toLowerCase());
+      let status = "planned";
+      if (i.state === "closed") {
+        if (i.state_reason === "not_planned") return null; // skip declined
+        status = "shipped";
+      } else if (names.includes("build") || names.includes("in-progress")) {
+        status = "in_progress";
+      } else if (names.includes("backlog")) {
+        status = "planned";
+      }
+      return {
+        id: i.number,
+        title: i.title.replace(/^\[feedback\]\s*/i, ""),
+        status, // planned | in_progress | shipped
+        updatedAt: i.updated_at,
+      };
+    })
+    .filter(Boolean);
+
+  const out = json({ items }, 200, openCors);
+  await cache.put(cacheKey, out.clone());
+  return out;
+}
 
 function buildIssue({ message, type, ctx }) {
   const firstLine = message.split("\n")[0].slice(0, 80).trim();

@@ -80,3 +80,38 @@ honeypot field (`hp`) helps the Worker drop obvious bots.
 Running a single Worker for several of your own projects? Set `ALLOWED_REPOS` on
 the Worker, then give each app's widget a `data-repo`. The Worker only honors
 repos on that allow-list, and its `GITHUB_TOKEN` must have Issues access to each.
+
+## Public roadmap (close the loop with users)
+
+Show end users what's **Planned / In progress / Shipped** so they see their
+feedback going somewhere. Add a roadmap page to your site:
+
+```html
+<div id="ff-roadmap"></div>
+<script
+  src="https://your-cdn/roadmap.js"
+  data-ingest-url="https://faster-features-ingest.you.workers.dev"
+></script>
+```
+
+Or in React:
+
+```tsx
+import { Roadmap } from "faster-features/widget/Roadmap";
+
+<Roadmap ingestUrl="https://faster-features-ingest.you.workers.dev" />;
+```
+
+**Visibility is opt-in and safe by default.** An item appears only after you add
+the `roadmap` label to its issue, and the public endpoint returns **only the
+title and a status** — never the body, the reporter, or any submitted context.
+The column is derived automatically:
+
+| Issue state                          | Column        |
+| ------------------------------------ | ------------- |
+| `backlog` label                      | Planned       |
+| `build` / `in-progress` label        | In progress   |
+| closed (completed)                   | Shipped       |
+| closed as not planned                | hidden        |
+
+The endpoint is cached ~60s at the edge, so a busy page won't hit GitHub limits.

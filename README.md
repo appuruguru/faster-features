@@ -29,13 +29,19 @@ Designed around two rules:
       |                   build   ──► AI runner
       v
 [AI writes code → PR]     Claude (sub or API) or Copilot — you pick. The one paid step.
+
+       ┌─────────────────────────────────────────────────────────┐
+       │ Public roadmap widget reads issues back out (opt-in,     │
+       │ title + status only) so users see Planned/In progress/   │
+       │ Shipped — closing the loop on their feedback.            │
+       └─────────────────────────────────────────────────────────┘
 ```
 
 ## What's in here
 
 | Piece                                          | What it is                                                    |
 | ---------------------------------------------- | ------------------------------------------------------------ |
-| [`packages/widget`](packages/widget)           | Drop-in feedback button (vanilla JS + React). No token.      |
+| [`packages/widget`](packages/widget)           | Drop-in feedback button **and** public roadmap (vanilla JS + React). No token. |
 | [`packages/ingest-worker`](packages/ingest-worker) | Cloudflare Worker: feedback POST → GitHub issue.         |
 | [`.github/`](.github)                           | Issue template + workflows: notify, backlog, build.          |
 | [`faster-features.config.yml`](faster-features.config.yml) | One config file: repo, owner, ingest URL, build runner. |

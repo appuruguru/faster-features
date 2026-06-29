@@ -134,6 +134,7 @@ async function main() {
     `name = "${workerName}"`,
     `main = "worker.js"`,
     `compatibility_date = "2026-01-01"`,
+    `account_id = "${wenv.CLOUDFLARE_ACCOUNT_ID}"`, // not secret; lets redeploys need only the API token
     ``,
     `[vars]`,
     `GITHUB_REPO = "${repo}"`,

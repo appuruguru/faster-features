@@ -98,6 +98,11 @@ import { Roadmap } from "faster-features/widget/Roadmap";
 <Roadmap ingestUrl="https://faster-features-ingest.you.workers.dev" />;
 ```
 
+**Ready-made page template:** copy [`examples/roadmap.html`](../../examples/roadmap.html)
+— a styled, standalone roadmap page (light/dark) where you just swap in your
+Worker URL. (And [`examples/demo.html`](../../examples/demo.html) is a page with the
+feedback button for testing.)
+
 **Visibility is opt-in and safe by default.** An item appears only after you add
 the `roadmap` label to its issue, and the public endpoint returns **only the
 title and a status** — never the body, the reporter, or any submitted context.

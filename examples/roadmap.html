@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Roadmap</title>
+    <style>
+      /* Minimal page chrome — the widget injects its own column/card styles. */
+      body {
+        font: 16px/1.6 system-ui, sans-serif;
+        max-width: 980px;
+        margin: 56px auto;
+        padding: 0 20px;
+        color: #111;
+      }
+      h1 { margin: 0 0 4px; }
+      .sub { color: #666; margin: 0 0 28px; }
+      @media (prefers-color-scheme: dark) {
+        body { background: #141416; color: #f2f2f2; }
+        .sub { color: #9a9aa0; }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Roadmap</h1>
+    <p class="sub">What's planned, in progress, and shipped.</p>
+
+    <!-- The widget renders three columns into this element. -->
+    <div id="ff-roadmap"></div>
+
+    <!--
+      Replace the URL with YOUR deployed ingest Worker.
+      Upvote buttons appear automatically if you enabled the KV store at setup.
+    -->
+    <script src="https://YOUR-WORKER.workers.dev/roadmap.js"></script>
+  </body>
+</html>

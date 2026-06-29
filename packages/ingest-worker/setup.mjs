@@ -261,14 +261,25 @@ async function registerWebhook(repo, token, secret, workerUrl) {
     "Content-Type": "application/json",
   };
   const hookUrl = workerUrl.replace(/\/$/, "") + "/webhook";
+  const cfg = { url: hookUrl, content_type: "json", secret };
   const list = await fetch(api, { headers });
   if (list.ok) {
     const hooks = await list.json();
-    if (hooks.some((h) => h.config && h.config.url === hookUrl)) return "already present";
+    const existing = hooks.find((h) => h.config && h.config.url === hookUrl);
+    if (existing) {
+      // Update it so the secret stays in sync with the worker on every re-run
+      // (otherwise GitHub signs with a stale secret and the worker returns 401).
+      const upd = await fetch(`${api}/${existing.id}`, {
+        method: "PATCH", headers,
+        body: JSON.stringify({ active: true, events: ["issues"], config: cfg }),
+      });
+      if (!upd.ok) throw new Error(`update ${upd.status} ${(await upd.text()).slice(0, 120)}`);
+      return "updated (secret synced)";
+    }
   }
   const resp = await fetch(api, {
     method: "POST", headers,
-    body: JSON.stringify({ name: "web", active: true, events: ["issues"], config: { url: hookUrl, content_type: "json", secret } }),
+    body: JSON.stringify({ name: "web", active: true, events: ["issues"], config: cfg }),
   });
   if (!resp.ok) throw new Error(`${resp.status} ${(await resp.text()).slice(0, 120)}`);
   return "created";

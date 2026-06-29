@@ -69,10 +69,13 @@ async function main() {
     if (!useGh.toLowerCase().startsWith("n")) token = ghTok.stdout.trim();
   }
   if (!token) {
-    const url = "https://github.com/settings/personal-access-tokens/new?name=faster-features-ingest";
-    log("Opening GitHub's fine-grained token page. Set:");
-    console.log(`    Repository access : Only select repositories -> ${repo}`);
-    console.log("    Permissions       : Issues = Read/write, Webhooks = Read/write");
+    const url = "https://github.com/settings/tokens/new";
+    log("Opening GitHub's token page.");
+    console.log("    Easiest: a CLASSIC token with the `repo` scope (covers issues, labels, webhooks).");
+    console.log(`    Or fine-grained: select repo ${repo}, with Issues + Webhooks = Read/write.`);
+    console.log("    ⚠ SAVE this token in a password manager — GitHub shows it ONCE, and you can");
+    console.log("      reuse the SAME token for every app you set up. (Regenerating it breaks");
+    console.log("      apps already using it.)");
     openInBrowser(url);
     token = await ask("Paste the generated token:");
   }
@@ -83,7 +86,10 @@ async function main() {
   let cfToken = process.env.CLOUDFLARE_API_TOKEN || "";
   if (!cfToken) {
     log("Opening the Cloudflare API token page.");
-    console.log("    Create Token → use the 'Edit Cloudflare Workers' template → Continue → Create → copy it.");
+    console.log("    Create Token → Custom token → Account permissions:");
+    console.log("      Workers Scripts: Edit, Workers KV Storage: Edit, Account Settings: Read.");
+    console.log("    (Avoid the 'Edit Cloudflare Workers' template — it forces a Zone you don't need.)");
+    console.log("    ⚠ SAVE this token too — reusable for every app on this Cloudflare account.");
     openInBrowser("https://dash.cloudflare.com/profile/api-tokens");
     cfToken = await ask("Paste the Cloudflare API token:");
   }

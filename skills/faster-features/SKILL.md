@@ -46,17 +46,24 @@ code — it lives only in the Worker.
 
 ## Step 3 — Embed the feedback widget
 
-- Plain HTML / non-React: copy `widget.js` into the app's static assets, then add
-  one script tag before `</body>` in the main layout:
-  ```html
-  <script src="/assets/widget.js" data-ingest-url="INGEST_URL"></script>
-  ```
-- React/Next: copy `packages/widget/Feedback.tsx` into the components dir and
-  render `<FeedbackWidget ingestUrl="INGEST_URL" />` once in the root layout.
-  Ensure the `ff-*` styles are present (see `packages/widget/widget.js`) or
-  restyle to match the app.
+The Worker SERVES the widget at `INGEST_URL/widget.js`, so the embed is one line
+that needs no config (it infers the ingest URL from its own origin). Add
+`data-roadmap="/roadmap"` so a Roadmap link shows above the feedback button (see
+Step 5).
 
-Keep this change minimal: a single script tag or one component + one render site.
+- Plain HTML: one script tag before `</body>` in the main layout:
+  ```html
+  <script src="INGEST_URL/widget.js" data-roadmap="/roadmap"></script>
+  ```
+- React/Next (App Router): put `INGEST_URL` in a shared const (e.g.
+  `app/lib/feedback.ts`), then load it in the root layout via `next/script`:
+  ```tsx
+  <Script src={`${FEEDBACK_WORKER_URL}/widget.js`} data-roadmap="/roadmap" strategy="afterInteractive" />
+  ```
+  Also add `feedback-worker` (the nested worker, if used) to `tsconfig.json`
+  `exclude`.
+
+Keep this change minimal: one script tag / one `<Script>` + one render site.
 
 ## Step 4 — GitHub automation (usually nothing to copy)
 
@@ -69,13 +76,17 @@ Only if the user chose `claude-api` (fully automated CI builds): copy
 `.github/workflows/build.yml` into the repo and add an `ANTHROPIC_API_KEY`
 secret. See `docs/build-runners.md`.
 
-## Step 5 — Optional public roadmap (+ upvoting)
+## Step 5 — Public roadmap page (+ upvoting)
 
-If the user wants end users to see status, add a roadmap page using
-`packages/widget/roadmap.js` (or `Roadmap.tsx`) pointed at `INGEST_URL`. Items
-appear only after the dev adds the `roadmap` label; the endpoint exposes title +
-status only. Upvoting turns on automatically if the Worker has the VOTES KV store
-(created in Step 2); it stores counts only — no emails or identities.
+Add a roadmap page so the `data-roadmap` link from Step 3 has somewhere to go:
+- Plain HTML: a `roadmap.html` with `<div id="ff-roadmap"></div>` +
+  `<script src="INGEST_URL/roadmap.js"></script>` (see `examples/roadmap.html`).
+- React/Next: a `/roadmap` route that renders `<div id="ff-roadmap" />` and loads
+  `INGEST_URL/roadmap.js` via `next/script`.
+
+Items appear only after the dev adds the `roadmap` label; the endpoint exposes
+title + status only. Upvoting turns on automatically if the Worker has the VOTES
+KV store (created in Step 2) — counts only, no emails or identities.
 
 ## Step 6 — Verify
 

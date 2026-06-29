@@ -73,6 +73,7 @@ honeypot field (`hp`) helps the Worker drop obvious bots.
 | `key`        | `data-key`         | no       | Shared secret, sent as `x-ff-key`.     |
 | `label`      | `data-label`       | no       | Button text (default `Feedback`).      |
 | `repo`       | `data-repo`        | no       | Target `owner/name` when one Worker serves multiple repos (must be in the Worker's `ALLOWED_REPOS`). |
+| `roadmap`    | `data-roadmap`     | no       | Path/URL to your roadmap page (e.g. `/roadmap`). Shows a small **Roadmap** link stacked above the feedback button. |
 
 ### One Worker, many of your repos
 

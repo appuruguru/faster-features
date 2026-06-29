@@ -124,34 +124,14 @@ async function main() {
     console.log(`    Shared secret (also pass to the widget as data-key):\n    ${sharedSecret}`);
   }
 
-  // ---- 5. Optional KV namespace for upvotes ----
-  let kvBlock = "";
-  if (enableVotes) {
-    log("Setting up KV namespace for votes…");
-    let kvId = "";
-    // Reuse an existing namespace so re-runs don't pile up duplicates.
-    const list = sh("npx", ["wrangler", "kv", "namespace", "list"], { env: wenv });
-    const arr = (list.stdout || "").match(/\[\s*{[\s\S]*}\s*\]/);
-    if (arr) {
-      try {
-        const found = JSON.parse(arr[0]).find((n) => /VOTES$/.test(n.title || ""));
-        if (found) kvId = found.id;
-      } catch {}
-    }
-    if (!kvId) {
-      const kv = sh("npx", ["wrangler", "kv", "namespace", "create", "VOTES"], { env: wenv });
-      const kvOut = (kv.stdout || "") + (kv.stderr || "");
-      stdout.write(kvOut);
-      kvId = (kvOut.match(/"?id"?\s*[:=]\s*"([0-9a-f]{8,})"/) || [])[1] || "";
-    }
-    if (kvId) kvBlock = `\n[[kv_namespaces]]\nbinding = "VOTES"\nid = "${kvId}"\n`;
-    else log("Couldn't determine the KV id — voting stays off; add the [[kv_namespaces]] block later and redeploy.");
-  }
+  // ---- 5. Per-app worker name so multiple apps don't collide on one account ----
+  const workerName =
+    "ff-" + repo.split("/")[1].toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 54);
 
-  // ---- 6. Write wrangler.toml ----
+  // ---- 6. Write wrangler.toml (vars first; KV binding appended once resolved) ----
   log("Writing wrangler.toml…");
-  await writeFile(wranglerToml, [
-    `name = "faster-features-ingest"`,
+  const baseToml = [
+    `name = "${workerName}"`,
     `main = "worker.js"`,
     `compatibility_date = "2026-01-01"`,
     ``,
@@ -161,10 +141,34 @@ async function main() {
     `BUILD_RUNNER = "${buildRunner}"`,
     `ALLOWED_ORIGINS = "${origins}"`,
     `ROADMAP_LABEL = "roadmap"`,
-    kvBlock,
-  ].join("\n"));
+    ``,
+  ].join("\n");
+  await writeFile(wranglerToml, baseToml);
 
-  // ---- 7. Deploy first (so the Worker exists before we set secrets) ----
+  // ---- 7. Optional KV for upvotes — per-app namespace, idempotent on re-run ----
+  if (enableVotes) {
+    log("Setting up KV namespace for votes…");
+    const wantTitle = `${workerName}-VOTES`; // wrangler titles it <worker-name>-VOTES
+    let kvId = "";
+    const list = sh("npx", ["wrangler", "kv", "namespace", "list"], { env: wenv });
+    const arr = (list.stdout || "").match(/\[\s*{[\s\S]*}\s*\]/);
+    if (arr) {
+      try {
+        const found = JSON.parse(arr[0]).find((n) => n.title === wantTitle);
+        if (found) kvId = found.id;
+      } catch {}
+    }
+    if (!kvId) {
+      const kv = sh("npx", ["wrangler", "kv", "namespace", "create", "VOTES"], { env: wenv });
+      const kvOut = (kv.stdout || "") + (kv.stderr || "");
+      stdout.write(kvOut);
+      kvId = (kvOut.match(/"?id"?\s*[:=]\s*"([0-9a-f]{8,})"/) || [])[1] || "";
+    }
+    if (kvId) await writeFile(wranglerToml, baseToml + `\n[[kv_namespaces]]\nbinding = "VOTES"\nid = "${kvId}"\n`);
+    else log("Couldn't determine the KV id — voting stays off; add the [[kv_namespaces]] block later and redeploy.");
+  }
+
+  // ---- 8. Deploy (so the Worker exists before we set secrets) ----
   log("Deploying…");
   const deploy = sh("npx", ["wrangler", "deploy"], { env: wenv });
   stdout.write((deploy.stdout || "") + (deploy.stderr || ""));
@@ -172,7 +176,7 @@ async function main() {
   const url = (deploy.stdout.match(/https:\/\/[^\s]+\.workers\.dev/) || [])[0];
   if (!url) throw new Error("Deployed, but couldn't detect the Worker URL.");
 
-  // ---- 8. Secrets (the Worker now exists; secrets apply live, no redeploy) ----
+  // ---- 9. Secrets (the Worker now exists; secrets apply live, no redeploy) ----
   log("Uploading secrets…");
   const putSecret = (name, val) => {
     const r = sh("npx", ["wrangler", "secret", "put", name], { input: val + "\n", env: wenv });
@@ -186,7 +190,7 @@ async function main() {
   if (sharedSecret) putSecret("SHARED_SECRET", sharedSecret);
   if (notifyUrl) putSecret("NOTIFY_WEBHOOK", notifyUrl); // stored as a secret, never in wrangler.toml
 
-  // ---- 9. Labels + webhook (idempotent) ----
+  // ---- 10. Labels + webhook (idempotent) ----
   log("Creating labels…");
   await createLabels(repo, token);
   log("Registering GitHub webhook…");
@@ -197,7 +201,7 @@ async function main() {
     console.log(`    Add manually: ${repo} Settings → Webhooks → ${url}/webhook, JSON, event Issues, secret = WEBHOOK_SECRET.`);
   }
 
-  // ---- 10. Write URL back into faster-features.config.yml if present ----
+  // ---- 11. Write URL back into faster-features.config.yml if present ----
   if (existsSync(rootConfig)) {
     let cfg = await readFile(rootConfig, "utf8");
     cfg = cfg.replace(/^(\s*ingestUrl:).*$/m, `$1 ${url}`);
@@ -207,7 +211,7 @@ async function main() {
     await writeFile(rootConfig, cfg);
   }
 
-  // ---- 11. Done ----
+  // ---- 12. Done ----
   console.log("\n✅ Done.\n");
   console.log("   Paste this one line into your app (before </body>):\n");
   console.log(`   <script src="${url}/widget.js"></script>\n`);

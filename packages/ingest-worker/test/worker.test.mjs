@@ -99,6 +99,15 @@ await test("POST / creates issue and assigns owner", async () => {
   assert.deepEqual(sent.labels, ["feedback", "pending-triage"]);
 });
 
+await test("POST / pings NOTIFY_WEBHOOK when set", async () => {
+  const env = { ...baseEnv, NOTIFY_WEBHOOK: "https://discord.test/webhook" };
+  const r = await worker.fetch(req("POST", "/", { body: { message: "hi", type: "idea" } }), env);
+  assert.equal(r.status, 201);
+  const ping = fetchCalls.find((c) => c.url === "https://discord.test/webhook");
+  assert.ok(ping, "notification webhook called");
+  assert.match(JSON.parse(ping.init.body).content, /New feedback/);
+});
+
 await test("POST / rejects empty message", async () => {
   const r = await worker.fetch(req("POST", "/", { body: { message: "" } }), baseEnv);
   assert.equal(r.status, 400);

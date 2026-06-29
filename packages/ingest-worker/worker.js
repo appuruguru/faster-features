@@ -113,7 +113,24 @@ async function handleFeedback(request, env, origin) {
     return json({ error: "Failed to create issue", status: resp.status }, 502, cors);
   }
   const created = await resp.json();
+  // Optional: ping a Discord (or any) webhook so you actually get notified —
+  // GitHub suppresses the self-assignment push when the Worker uses your token.
+  if (env.NOTIFY_WEBHOOK) await notify(env, created, type);
   return json({ ok: true, issue: created.number }, 201, cors);
+}
+
+async function notify(env, issue, type) {
+  try {
+    await fetch(env.NOTIFY_WEBHOOK, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        content: `🆕 **New feedback** (${type})\n${issue.title}\n${issue.html_url}`,
+      }),
+    });
+  } catch {
+    // Notifications are best-effort; never fail the feedback submission.
+  }
 }
 
 function buildIssue({ message, type, ctx }) {

@@ -59,6 +59,7 @@ async function main() {
   const buildRunner = ["claude-web", "copilot", "claude-api"].includes(runnerIn) ? runnerIn : "claude-web";
   const useSecret = (await ask("Add a shared secret to deter random POSTs? (y/N):", "n")).toLowerCase().startsWith("y");
   const enableVotes = (await ask("Enable roadmap upvoting? Free KV, counts only — no PII. (y/N):", "n")).toLowerCase().startsWith("y");
+  const notifyUrl = await ask("Notification webhook URL (Discord/Slack/ntfy) for new feedback, or blank to skip:", "");
 
   // GitHub token — prefer `gh` (pipe, doesn't touch our stdin), else one-click page.
   let token = "";
@@ -183,6 +184,7 @@ async function main() {
   putSecret("GITHUB_TOKEN", token);
   putSecret("WEBHOOK_SECRET", webhookSecret);
   if (sharedSecret) putSecret("SHARED_SECRET", sharedSecret);
+  if (notifyUrl) putSecret("NOTIFY_WEBHOOK", notifyUrl); // stored as a secret, never in wrangler.toml
 
   // ---- 9. Labels + webhook (idempotent) ----
   log("Creating labels…");

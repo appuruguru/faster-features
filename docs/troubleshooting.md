@@ -59,6 +59,26 @@ the dashboard: **Workers & Pages → set up a subdomain**, then re-run.
   PowerShell won't see it. That only means setup opens the token page instead of
   grabbing a token automatically.
 
+## I see the issue in GitHub but never get a notification
+
+The Worker assigns you to new issues to trigger a GitHub Mobile push — but
+**GitHub doesn't notify you about your own actions.** Because the Worker uses
+*your* token, "you assigned you" is a self-action and the push is suppressed.
+
+Fixes:
+- **Add a notification webhook** (recommended, zero extra accounts): during
+  `npm run setup`, paste a **Discord/Slack/ntfy** webhook URL at the
+  "Notification webhook URL" prompt. The Worker posts there on every new
+  feedback. Stored as a secret, never in `wrangler.toml`.
+  - Discord webhook: Server Settings → Integrations → Webhooks → New Webhook →
+    pick a channel → Copy Webhook URL.
+- Or run the Worker under a separate identity (a GitHub App bot or a second
+  account) so assigning *you* is no longer a self-action. (Heavier; the webhook
+  is simpler for personal use.)
+
+Also confirm GitHub Mobile's **Assigned** push is enabled (app → Settings →
+Notifications), though that alone won't beat the self-action suppression.
+
 ## Verifying it works
 
 ```bash

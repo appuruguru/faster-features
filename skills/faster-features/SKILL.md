@@ -68,7 +68,7 @@ Keep this change minimal: one script tag / one `<Script>` + one render site.
 ## Step 4 — GitHub automation (usually nothing to copy)
 
 The Worker does the GitHub-side work itself: it assigns the owner on issue
-creation (the notification) and handles the `build` label via a webhook it
+creation (the notification) and handles the `ff:build` label via a webhook it
 registered during setup. So for the default `claude-web` and `copilot` runners,
 **no files go into the target repo.**
 
@@ -84,14 +84,14 @@ Add a roadmap page so the `data-roadmap` link from Step 3 has somewhere to go:
 - React/Next: a `/roadmap` route that renders `<div id="ff-roadmap" />` and loads
   `INGEST_URL/roadmap.js` via `next/script`.
 
-Items appear only after the dev adds the `roadmap` label; the endpoint exposes
+Items appear only after the dev adds the `ff:roadmap` label; the endpoint exposes
 title + status only. Upvoting turns on automatically if the Worker has the VOTES
 KV store (created in Step 2) — counts only, no emails or identities.
 
 ## Step 6 — Verify
 
 Build the app, confirm the Feedback button renders, and submit a test from a
-logged-out browser. Confirm a GitHub issue appears with the `feedback` label and
+logged-out browser. Confirm a GitHub issue appears with the `ff:feedback` label and
 the configured owner is assigned (which fires a GitHub Mobile push).
 
 ## Hard rules

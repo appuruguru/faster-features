@@ -1,6 +1,6 @@
 # Build runners
 
-When you approve a request by adding the **`build`** label, what happens depends
+When you approve a request by adding the **`ff:build`** label, what happens depends
 on `BUILD_RUNNER` (set during setup). For the two defaults, the **Worker** reacts
 to the label via its webhook — **nothing is needed in your repo**. Only the
 `claude-api` runner uses a committed GitHub Action.
@@ -13,7 +13,7 @@ to the label via its webhook — **nothing is needed in your repo**. Only the
 
 ## `claude-web` (default — no API token, no per-token cost, no repo file)
 
-On `build`, the Worker posts a kickoff comment. You open
+On `ff:build`, the Worker posts a kickoff comment. You open
 [Claude Code on the web](https://claude.ai/code) on your phone or browser, pick
 the repo, and say *"Implement issue #N; keep it small; open a PR."* It runs on
 **Anthropic's cloud using your subscription** — first-party, so it's
@@ -22,7 +22,7 @@ final approval.
 
 ## `copilot` (automated, usage-based, no repo file)
 
-On `build`, the Worker assigns **GitHub Copilot's coding agent** to the issue. It
+On `ff:build`, the Worker assigns **GitHub Copilot's coding agent** to the issue. It
 branches, writes code on Actions runners, and opens a draft PR. Billed via
 Copilot AI credits (usage-based as of 2026-06-01). Requires a paid Copilot plan
 with the coding agent enabled.
@@ -30,7 +30,7 @@ with the coding agent enabled.
 ## `claude-api` (automated, pay-per-token — the one that needs a repo file)
 
 This runner runs *as* a GitHub Action, so copy `.github/workflows/build.yml` into
-your repo and add an `ANTHROPIC_API_KEY` secret. On `build`, it runs the official
+your repo and add an `ANTHROPIC_API_KEY` secret. On `ff:build`, it runs the official
 [`anthropics/claude-code-action`](https://github.com/anthropics/claude-code-action)
 to implement the issue and open a PR.
 

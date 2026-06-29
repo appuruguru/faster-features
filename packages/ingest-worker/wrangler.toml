@@ -13,7 +13,7 @@ BUILD_RUNNER = "claude-web"
 # Comma-separated sites allowed to POST feedback. "*" = any origin.
 ALLOWED_ORIGINS = "https://your-app.com,http://localhost:3000"
 # Label that opts an item onto the public roadmap.
-ROADMAP_LABEL = "roadmap"
+ROADMAP_LABEL = "ff:roadmap"
 # Optional: serve several of your repos from one Worker (widgets send data-repo).
 ALLOWED_REPOS = ""
 

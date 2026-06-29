@@ -10,7 +10,7 @@
  *   GET  /            public roadmap data (title + status only)
  *   POST /            create a feedback issue (and assign the owner → mobile push)
  *   POST /vote        upvote a roadmap item (optional; needs VOTES KV)
- *   POST /webhook     GitHub webhook: on the `build` label, kick off the runner
+ *   POST /webhook     GitHub webhook: on the `ff:build` label, kick off the runner
  *
  * Required:
  *   GITHUB_TOKEN     secret — fine-grained, Issues:write (+ Webhooks:write to
@@ -22,7 +22,7 @@
  *   SHARED_SECRET    secret — value the widget must send as x-ff-key
  *   WEBHOOK_SECRET   secret — verifies GitHub webhook payloads
  *   BUILD_RUNNER     "claude-web" (default) | "copilot" | "claude-api"
- *   ROADMAP_LABEL    label that opts an item onto the public roadmap (def "roadmap")
+ *   ROADMAP_LABEL    label that opts an item onto the public roadmap (def "ff:roadmap")
  *   ALLOWED_REPOS    comma list — lets one Worker serve several repos
  *   VOTES            KV namespace binding — enables upvoting when present
  */
@@ -103,7 +103,7 @@ async function handleFeedback(request, env, origin) {
   const bodyObj = {
     title: issue.title,
     body: issue.body,
-    labels: ["feedback", "pending-triage"],
+    labels: ["ff:feedback", "ff:pending-triage"],
   };
   // Assigning the owner is what fires their GitHub Mobile push — no workflow needed.
   if (env.OWNER) bodyObj.assignees = [env.OWNER];
@@ -183,7 +183,7 @@ async function handleWebhook(request, env) {
   const label = ((p.label && p.label.name) || "").toLowerCase();
   const issueNo = p.issue && p.issue.number;
   const repo = p.repository && p.repository.full_name;
-  if (label === "build" && issueNo && repo) {
+  if (label === "ff:build" && issueNo && repo) {
     await handleBuild(env, repo, issueNo);
   }
   return json({ ok: true }, 200, {});
@@ -232,7 +232,7 @@ async function handleRoadmap(request, env) {
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
-  const label = (env.ROADMAP_LABEL || "roadmap").trim();
+  const label = (env.ROADMAP_LABEL || "ff:roadmap").trim();
   const resp = await gh(
     env,
     `/repos/${repo}/issues?state=all&per_page=100&labels=${encodeURIComponent(label)}`,
@@ -251,9 +251,9 @@ async function handleRoadmap(request, env) {
       if (i.state === "closed") {
         if (i.state_reason === "not_planned") return null;
         status = "shipped";
-      } else if (names.includes("build") || names.includes("in-progress")) {
+      } else if (names.includes("ff:build") || names.includes("ff:in-progress")) {
         status = "in_progress";
-      } else if (names.includes("backlog")) {
+      } else if (names.includes("ff:backlog")) {
         status = "planned";
       }
       const item = {
@@ -313,12 +313,12 @@ async function handleVote(request, env) {
 let bootstrapped = false; // per-isolate guard
 
 const BOOTSTRAP_LABELS = [
-  { name: "feedback", color: "0e8a16", description: "Incoming user feedback" },
-  { name: "pending-triage", color: "fbca04", description: "Awaiting your review" },
-  { name: "backlog", color: "c5def5", description: "Shelved on the roadmap as Planned" },
-  { name: "build", color: "1d76db", description: "Approved - kicks off the AI build" },
-  { name: "roadmap", color: "5319e7", description: "Show on the public roadmap" },
-  { name: "in-progress", color: "d93f0b", description: "Being worked on" },
+  { name: "ff:feedback", color: "0e8a16", description: "faster-features: incoming user feedback" },
+  { name: "ff:pending-triage", color: "fbca04", description: "faster-features: awaiting your review" },
+  { name: "ff:backlog", color: "c5def5", description: "faster-features: shelved on the roadmap as Planned" },
+  { name: "ff:build", color: "1d76db", description: "faster-features: approved - kicks off the AI build" },
+  { name: "ff:roadmap", color: "5319e7", description: "faster-features: show on the public roadmap" },
+  { name: "ff:in-progress", color: "d93f0b", description: "faster-features: being worked on" },
 ];
 
 async function ensureBootstrap(env, origin) {

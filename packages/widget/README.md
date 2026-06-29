@@ -105,14 +105,14 @@ Worker URL. (And [`examples/demo.html`](../../examples/demo.html) is a page with
 feedback button for testing.)
 
 **Visibility is opt-in and safe by default.** An item appears only after you add
-the `roadmap` label to its issue, and the public endpoint returns **only the
+the `ff:roadmap` label to its issue, and the public endpoint returns **only the
 title and a status** — never the body, the reporter, or any submitted context.
 The column is derived automatically:
 
 | Issue state                          | Column        |
 | ------------------------------------ | ------------- |
-| `backlog` label                      | Planned       |
-| `build` / `in-progress` label        | In progress   |
+| `ff:backlog` label                   | Planned       |
+| `ff:build` / `ff:in-progress` label  | In progress   |
 | closed (completed)                   | Shipped       |
 | closed as not planned                | hidden        |
 

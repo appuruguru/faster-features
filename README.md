@@ -100,9 +100,14 @@ Paste the snippet `setup` printed, before `</body>`:
 ```
 
 That's it — a Feedback button appears, submissions become triaged issues in your
-repo, you get a GitHub Mobile push, and adding the `build` label kicks off your AI
-runner. *(Only the opt-in `claude-api` runner needs `build.yml` in your repo — the
-default `claude-web` and `copilot` runners don't.)*
+repo, you get a GitHub Mobile push, and adding the `ff:build` label kicks off your
+AI runner. *(Only the opt-in `claude-api` runner needs `build.yml` in your repo —
+the default `claude-web` and `copilot` runners don't.)*
+
+> **Labels:** the pipeline's labels are all prefixed **`ff:`** (`ff:feedback`,
+> `ff:build`, `ff:roadmap`, …) so they're clearly faster-features' own and don't
+> get confused with GitHub's stock labels (`bug`, `enhancement`, …). They're
+> created automatically — you never make them by hand.
 
 ## Cost
 

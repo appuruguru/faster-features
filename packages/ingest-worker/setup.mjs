@@ -147,7 +147,7 @@ async function main() {
     `OWNER = "${owner}"`,
     `BUILD_RUNNER = "${buildRunner}"`,
     `ALLOWED_ORIGINS = "${origins}"`,
-    `ROADMAP_LABEL = "roadmap"`,
+    `ROADMAP_LABEL = "ff:roadmap"`,
     ``,
   ].join("\n");
   await writeFile(wranglerToml, baseToml);
@@ -229,12 +229,12 @@ async function main() {
 }
 
 const LABELS = [
-  { name: "feedback", color: "0e8a16", description: "Incoming user feedback" },
-  { name: "pending-triage", color: "fbca04", description: "Awaiting your review" },
-  { name: "backlog", color: "c5def5", description: "Shelved on the roadmap as Planned" },
-  { name: "build", color: "1d76db", description: "Approved - kicks off the AI build" },
-  { name: "roadmap", color: "5319e7", description: "Show on the public roadmap" },
-  { name: "in-progress", color: "d93f0b", description: "Being worked on" },
+  { name: "ff:feedback", color: "0e8a16", description: "faster-features: incoming user feedback" },
+  { name: "ff:pending-triage", color: "fbca04", description: "faster-features: awaiting your review" },
+  { name: "ff:backlog", color: "c5def5", description: "faster-features: shelved on the roadmap as Planned" },
+  { name: "ff:build", color: "1d76db", description: "faster-features: approved - kicks off the AI build" },
+  { name: "ff:roadmap", color: "5319e7", description: "faster-features: show on the public roadmap" },
+  { name: "ff:in-progress", color: "d93f0b", description: "faster-features: being worked on" },
 ];
 
 async function createLabels(repo, token) {

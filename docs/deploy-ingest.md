@@ -101,7 +101,7 @@ Wrangler prints your Worker URL, e.g.
 
 ## 3. Register the webhook
 
-So adding a `build` label kicks off the runner (no file in your repo):
+So adding the `ff:build` label kicks off the runner (no file in your repo):
 repo **Settings → Webhooks → Add webhook** →
 - Payload URL: `<WORKER_URL>/webhook`
 - Content type: `application/json`
@@ -126,7 +126,7 @@ curl -X POST "$WORKER_URL" \
   -d '{"message":"test from curl","type":"idea","context":{"page":"/test"}}'
 ```
 
-A new issue labeled `feedback`, `pending-triage` should appear in your repo, with
+A new issue labeled `ff:feedback`, `ff:pending-triage` should appear in your repo, with
 you assigned to it.
 
 ## Notes on abuse

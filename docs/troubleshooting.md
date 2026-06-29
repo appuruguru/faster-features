@@ -87,7 +87,7 @@ curl -X POST "https://<your-worker>.workers.dev/" -H "Content-Type: application/
   -d '{"message":"test","type":"idea","context":{"page":"/"}}'
 # -> {"ok":true,"issue":N}  and a new assigned issue in your repo
 
-# 2. Public roadmap (after adding the `roadmap` label to an issue):
+# 2. Public roadmap (after adding the `ff:roadmap` label to an issue):
 curl "https://<your-worker>.workers.dev/"
 # -> {"items":[...],"voting":true|false}
 ```

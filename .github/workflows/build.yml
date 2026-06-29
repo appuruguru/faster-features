@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   build:
-    if: github.event.label.name == 'build'
+    if: github.event.label.name == 'ff:build'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

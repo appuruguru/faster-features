@@ -39,9 +39,9 @@ globalThis.fetch = async (url, init = {}) => {
   if (url.includes("/hooks") && (init.method || "GET") === "GET") return ghResp(200, []);
   if (url.includes("/issues?")) {
     return ghResp(200, [
-      { number: 1, title: "[feedback] A", state: "open", labels: [{ name: "backlog" }], updated_at: "x" },
-      { number: 2, title: "B", state: "open", labels: [{ name: "build" }], updated_at: "x" },
-      { number: 3, title: "C", state: "closed", state_reason: "completed", labels: [{ name: "roadmap" }], updated_at: "x" },
+      { number: 1, title: "[feedback] A", state: "open", labels: [{ name: "ff:backlog" }], updated_at: "x" },
+      { number: 2, title: "B", state: "open", labels: [{ name: "ff:build" }], updated_at: "x" },
+      { number: 3, title: "C", state: "closed", state_reason: "completed", labels: [{ name: "ff:roadmap" }], updated_at: "x" },
       { number: 4, title: "D", state: "closed", state_reason: "not_planned", labels: [], updated_at: "x" },
     ]);
   }
@@ -60,7 +60,7 @@ await worker.fetch(new Request("https://w.example.com/", { method: "GET" }), {
 const baseEnv = {
   GITHUB_TOKEN: "t", GITHUB_REPO: "o/r", OWNER: "me",
   BUILD_RUNNER: "claude-web", WEBHOOK_SECRET: "whsec",
-  ALLOWED_ORIGINS: "*", ROADMAP_LABEL: "roadmap",
+  ALLOWED_ORIGINS: "*", ROADMAP_LABEL: "ff:roadmap",
 };
 
 const req = (method, path, { body, headers } = {}) =>
@@ -96,7 +96,7 @@ await test("POST / creates issue and assigns owner", async () => {
   assert.ok(create, "issue create call made");
   const sent = JSON.parse(create.init.body);
   assert.deepEqual(sent.assignees, ["me"]);
-  assert.deepEqual(sent.labels, ["feedback", "pending-triage"]);
+  assert.deepEqual(sent.labels, ["ff:feedback", "ff:pending-triage"]);
 });
 
 await test("POST / pings NOTIFY_WEBHOOK when set", async () => {
@@ -160,7 +160,7 @@ function sign(secret, body) {
 
 await test("POST /webhook build label triggers claude-web comment", async () => {
   const body = JSON.stringify({
-    action: "labeled", label: { name: "build" },
+    action: "labeled", label: { name: "ff:build" },
     issue: { number: 42 }, repository: { full_name: "o/r" },
   });
   const r = await worker.fetch(req("POST", "/webhook", {
@@ -173,7 +173,7 @@ await test("POST /webhook build label triggers claude-web comment", async () => 
 });
 
 await test("POST /webhook rejects bad signature", async () => {
-  const body = JSON.stringify({ action: "labeled", label: { name: "build" }, issue: { number: 1 }, repository: { full_name: "o/r" } });
+  const body = JSON.stringify({ action: "labeled", label: { name: "ff:build" }, issue: { number: 1 }, repository: { full_name: "o/r" } });
   const r = await worker.fetch(req("POST", "/webhook", {
     body,
     headers: { "x-github-event": "issues", "x-hub-signature-256": "sha256=deadbeef" },

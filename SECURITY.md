@@ -33,7 +33,7 @@ GitHub issue.
 
 ## Public roadmap
 
-- Opt-in per item: nothing is public until you add the `roadmap` label.
+- Opt-in per item: nothing is public until you add the `ff:roadmap` label.
 - The public endpoint returns **title + status only** — never the body, the
   reporter, the context, or vote internals.
 

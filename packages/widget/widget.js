@@ -36,6 +36,8 @@
   var label = cfg.label || attr("data-label", "Feedback");
   // Optional: target repo when one shared Worker serves multiple repos.
   var repo = cfg.repo || attr("data-repo", "");
+  // Optional: show a "Roadmap" link above the button, pointing at this path/URL.
+  var roadmap = cfg.roadmap || attr("data-roadmap", "");
 
   if (!ingestUrl) {
     console.warn("[faster-features] No ingestUrl configured; widget disabled.");
@@ -49,7 +51,14 @@
 
   var button = el("button", { class: "ff-btn", type: "button" }, [label]);
   button.addEventListener("click", openModal);
-  document.body.appendChild(button);
+
+  // Stack the (optional) roadmap link above the feedback button, bottom-right.
+  var launcher = el("div", { class: "ff-launcher" });
+  if (roadmap) {
+    launcher.appendChild(el("a", { class: "ff-roadmap-link", href: roadmap }, ["Roadmap"]));
+  }
+  launcher.appendChild(button);
+  document.body.appendChild(launcher);
 
   function openModal() {
     if (refs.overlay) return;
@@ -200,8 +209,11 @@
 
   function injectStyles() {
     var css =
-      ".ff-btn{position:fixed;right:20px;bottom:20px;z-index:2147483000;padding:10px 16px;border:none;border-radius:999px;background:#111;color:#fff;font:600 14px system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25)}" +
+      ".ff-launcher{position:fixed;right:20px;bottom:20px;z-index:2147483000;display:flex;flex-direction:column;align-items:flex-end;gap:8px}" +
+      ".ff-btn{padding:10px 16px;border:none;border-radius:999px;background:#111;color:#fff;font:600 14px system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25)}" +
       ".ff-btn:hover{background:#000}" +
+      ".ff-roadmap-link{font:600 12px system-ui,sans-serif;color:#fff;background:rgba(17,17,17,.7);padding:5px 12px;border-radius:999px;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.2)}" +
+      ".ff-roadmap-link:hover{background:#000}" +
       ".ff-overlay{position:fixed;inset:0;z-index:2147483600;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center}" +
       ".ff-panel{width:min(420px,92vw);background:#fff;color:#111;border-radius:14px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.35);font:14px system-ui,sans-serif}" +
       ".ff-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}" +

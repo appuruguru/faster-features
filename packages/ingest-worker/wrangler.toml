@@ -8,8 +8,8 @@ compatibility_date = "2026-01-01"
 GITHUB_REPO = "your-username/your-repo"
 # GitHub login assigned to new issues — assignment is what fires the mobile push.
 OWNER = "your-username"
-# Build runner on the `build` label: claude-web | copilot | claude-api
-BUILD_RUNNER = "claude-web"
+# Build runner on the `ff:build` label: claude-manual | copilot | claude-api
+BUILD_RUNNER = "claude-manual"
 # Comma-separated sites allowed to POST feedback. "*" = any origin.
 ALLOWED_ORIGINS = "https://your-app.com,http://localhost:3000"
 # Label that opts an item onto the public roadmap.

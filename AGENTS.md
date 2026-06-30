@@ -36,10 +36,10 @@ Worker and GitHub automation are set up once per repo.
 
 4. **No repo files needed for the default.** The Worker handles notifications
    (assign-on-create) and the build label (via a webhook it registers during
-   setup). Do **not** copy workflow files for `claude-web` or `copilot`. The
+   setup). Do **not** copy workflow files for `claude-manual` or `copilot`. The
    issue template and `faster-features.config.yml` are optional conveniences.
 
-5. **Pick a build runner.** Default `claude-web` needs no secrets and no repo
+5. **Pick a build runner.** Default `claude-manual` needs no secrets and no repo
    files. `copilot` likewise. Only `claude-api` requires copying
    `.github/workflows/build.yml` and adding an `ANTHROPIC_API_KEY` secret. See
    `docs/build-runners.md`.

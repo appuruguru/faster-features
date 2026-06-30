@@ -26,12 +26,12 @@ ingestUrl: https://faster-features-ingest.<your-subdomain>.workers.dev
 # Which AI writes the code when you approve a "build".
 # See docs/build-runners.md for the full comparison.
 #
-#   claude-web : (default) manual kickoff from Claude Code on the web / phone.
-#                Runs on your Pro/Max subscription. No API token, no per-token cost.
-#   copilot    : assign the issue to GitHub Copilot's coding agent (usage-based).
-#   claude-api : automated on the `build` label via the Claude Code Action.
-#                Requires ANTHROPIC_API_KEY secret (pay-per-token).
-buildRunner: claude-web
+#   claude-manual : (default) you kick it off in Claude Code (CLI, desktop, or web)
+#                   on your Pro/Max subscription. No API token, no per-token cost.
+#   copilot       : assign the issue to GitHub Copilot's coding agent (usage-based).
+#   claude-api    : automated on the `ff:build` label via the Claude Code Action.
+#                   Requires ANTHROPIC_API_KEY secret (pay-per-token).
+buildRunner: claude-manual
 
 # Optional: a GitHub Projects (v2) board that `backlog`-labeled issues are added to.
 # Leave blank to skip board automation.

@@ -55,8 +55,8 @@ async function main() {
   if (!/^[^/]+\/[^/]+$/.test(repo)) throw new Error(`"${repo}" is not owner/name`);
   const owner = await ask("GitHub login to notify (assigned to new issues):", repo.split("/")[0]);
   const origins = await ask("Allowed origins (comma-separated, or *):", "*");
-  const runnerIn = (await ask("Build runner — claude-web / copilot / claude-api:", "claude-web")).toLowerCase();
-  const buildRunner = ["claude-web", "copilot", "claude-api"].includes(runnerIn) ? runnerIn : "claude-web";
+  const runnerIn = (await ask("Build runner — claude-manual / copilot / claude-api:", "claude-manual")).toLowerCase();
+  const buildRunner = ["claude-manual", "copilot", "claude-api"].includes(runnerIn) ? runnerIn : "claude-manual";
   const useSecret = (await ask("Add a shared secret to deter random POSTs? (y/N):", "n")).toLowerCase().startsWith("y");
   const enableVotes = (await ask("Enable roadmap upvoting? Free KV, counts only — no PII. (y/N):", "n")).toLowerCase().startsWith("y");
   const notifyUrl = await ask("Notification webhook URL (Discord/Slack/ntfy) for new feedback, or blank to skip:", "");

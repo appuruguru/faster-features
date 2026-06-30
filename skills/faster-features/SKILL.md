@@ -69,7 +69,7 @@ Keep this change minimal: one script tag / one `<Script>` + one render site.
 
 The Worker does the GitHub-side work itself: it assigns the owner on issue
 creation (the notification) and handles the `ff:build` label via a webhook it
-registered during setup. So for the default `claude-web` and `copilot` runners,
+registered during setup. So for the default `claude-manual` and `copilot` runners,
 **no files go into the target repo.**
 
 Only if the user chose `claude-api` (fully automated CI builds): copy

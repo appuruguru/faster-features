@@ -2,7 +2,7 @@ name: Build approved feature (claude-api)
 
 # OPTIONAL — only needed if buildRunner = "claude-api".
 #
-# The Worker handles notifications and the claude-web / copilot build runners on
+# The Worker handles notifications and the claude-manual / copilot build runners on
 # its own (via assign-on-create + a GitHub webhook), so nothing has to be copied
 # into your repo for those. This workflow exists ONLY for the fully-automated
 # Claude API runner, which must run as a GitHub Action. Add it to your repo and

@@ -21,7 +21,7 @@
  *   ALLOWED_ORIGINS  comma list of sites allowed to POST feedback ("*" = any)
  *   SHARED_SECRET    secret — value the widget must send as x-ff-key
  *   WEBHOOK_SECRET   secret — verifies GitHub webhook payloads
- *   BUILD_RUNNER     "claude-web" (default) | "copilot" | "claude-api"
+ *   BUILD_RUNNER     "claude-manual" (default) | "copilot" | "claude-api"
  *   ROADMAP_LABEL    label that opts an item onto the public roadmap (def "ff:roadmap")
  *   ALLOWED_REPOS    comma list — lets one Worker serve several repos
  *   VOTES            KV namespace binding — enables upvoting when present
@@ -190,23 +190,25 @@ async function handleWebhook(request, env) {
 }
 
 async function handleBuild(env, repo, issueNo) {
-  const runner = env.BUILD_RUNNER || "claude-web";
+  const runner = env.BUILD_RUNNER || "claude-manual";
   if (runner === "copilot") {
     await gh(env, `/repos/${repo}/issues/${issueNo}/assignees`, "POST", {
       assignees: ["copilot-swe-agent"],
     });
     await comment(env, repo, issueNo,
       "🤖 Assigned to **GitHub Copilot coding agent** — it will open a draft PR.");
-  } else if (runner === "claude-web") {
+  } else if (runner === "claude-api") {
+    // Handled by the optional GitHub Action, not the Worker — nothing to post.
+  } else {
+    // claude-manual (default; also matches legacy "claude-web") — kickoff nudge.
     await comment(env, repo, issueNo, [
-      "🟢 **Approved for build.** Kick it off on your subscription — no API token:",
+      "🟢 **Approved for build.** Kick it off on your Claude subscription — no API token:",
       "",
-      "1. Open **Claude Code on the web** (https://claude.ai/code).",
-      `2. Select the \`${repo}\` repo.`,
+      `1. Open **Claude Code** — CLI, desktop, or web (https://claude.ai/code).`,
+      `2. Point it at \`${repo}\` (open the repo locally, or select it on web).`,
       `3. Say: *"Implement issue #${issueNo}. Keep it small and focused; open a PR."*`,
     ].join("\n"));
   }
-  // claude-api is handled by the optional GitHub Action, not the Worker.
 }
 
 function comment(env, repo, issueNo, bodyText) {

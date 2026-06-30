@@ -102,7 +102,7 @@ Paste the snippet `setup` printed, before `</body>`:
 That's it — a Feedback button appears, submissions become triaged issues in your
 repo, you get a GitHub Mobile push, and adding the `ff:build` label kicks off your
 AI runner. *(Only the opt-in `claude-api` runner needs `build.yml` in your repo —
-the default `claude-web` and `copilot` runners don't.)*
+the default `claude-manual` and `copilot` runners don't.)*
 
 > **Labels:** the pipeline's labels are all prefixed **`ff:`** (`ff:feedback`,
 > `ff:build`, `ff:roadmap`, …) so they're clearly faster-features' own and don't
@@ -123,5 +123,5 @@ the default `claude-web` and `copilot` runners don't.)*
 A *fully free and fully automated* build step isn't possible without violating a
 provider's terms — Anthropic restricts subscription tokens to first-party apps,
 so automated CI builds need a paid API key. The honest sweet spot is the default
-`claude-web` runner: it runs on your existing subscription with one manual tap
+`claude-manual` runner: it runs on your existing subscription with one manual tap
 (which doubles as your approval), keeping everything else free.

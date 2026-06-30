@@ -5,20 +5,19 @@ on `BUILD_RUNNER` (set during setup). For the two defaults, the **Worker** react
 to the label via its webhook — **nothing is needed in your repo**. Only the
 `claude-api` runner uses a committed GitHub Action.
 
-| Runner       | Handled by        | Repo file needed?      | Auth / cost                         |
-| ------------ | ----------------- | ---------------------- | ----------------------------------- |
-| `claude-web` | Worker (webhook)  | no                     | your Claude Pro/Max **subscription** |
-| `copilot`    | Worker (webhook)  | no                     | Copilot **usage-based** billing     |
-| `claude-api` | GitHub Action     | yes (`build.yml`)      | `ANTHROPIC_API_KEY` (pay-per-token) |
+| Runner          | Handled by        | Repo file needed?   | Auth / cost                          |
+| --------------- | ----------------- | ------------------- | ------------------------------------ |
+| `claude-manual` | Worker (webhook)  | no                  | your Claude Pro/Max **subscription** |
+| `copilot`       | Worker (webhook)  | no                  | Copilot **usage-based** billing      |
+| `claude-api`    | GitHub Action     | yes (`build.yml`)   | `ANTHROPIC_API_KEY` (pay-per-token)  |
 
-## `claude-web` (default — no API token, no per-token cost, no repo file)
+## `claude-manual` (default — no API token, no per-token cost, no repo file)
 
-On `ff:build`, the Worker posts a kickoff comment. You open
-[Claude Code on the web](https://claude.ai/code) on your phone or browser, pick
-the repo, and say *"Implement issue #N; keep it small; open a PR."* It runs on
-**Anthropic's cloud using your subscription** — first-party, so it's
-ToS-compliant, unlike using a subscription token in CI. The tap doubles as your
-final approval.
+On `ff:build`, the Worker posts a kickoff comment. You open **Claude Code — CLI,
+desktop, or [web](https://claude.ai/code)** — point it at the repo, and say
+*"Implement issue #N; keep it small; open a PR."* It runs on **your Claude
+subscription** — first-party, so it's ToS-compliant, unlike using a subscription
+token in CI. You kicking it off doubles as the final approval.
 
 ## `copilot` (automated, usage-based, no repo file)
 

@@ -59,7 +59,7 @@ await worker.fetch(new Request("https://w.example.com/", { method: "GET" }), {
 
 const baseEnv = {
   GITHUB_TOKEN: "t", GITHUB_REPO: "o/r", OWNER: "me",
-  BUILD_RUNNER: "claude-web", WEBHOOK_SECRET: "whsec",
+  BUILD_RUNNER: "claude-manual", WEBHOOK_SECRET: "whsec",
   ALLOWED_ORIGINS: "*", ROADMAP_LABEL: "ff:roadmap",
 };
 
@@ -158,7 +158,7 @@ function sign(secret, body) {
   return "sha256=" + createHmac("sha256", secret).update(body).digest("hex");
 }
 
-await test("POST /webhook build label triggers claude-web comment", async () => {
+await test("POST /webhook build label triggers claude-manual comment", async () => {
   const body = JSON.stringify({
     action: "labeled", label: { name: "ff:build" },
     issue: { number: 42 }, repository: { full_name: "o/r" },

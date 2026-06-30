@@ -92,7 +92,9 @@ KV store (created in Step 2) — counts only, no emails or identities.
 
 Build the app, confirm the Feedback button renders, and submit a test from a
 logged-out browser. Confirm a GitHub issue appears with the `ff:feedback` label and
-the configured owner is assigned (which fires a GitHub Mobile push).
+the configured owner is assigned. (For a reliable notification, set a
+NOTIFY_WEBHOOK at setup — GitHub suppresses the self-assignment push, so the
+Discord/Slack/ntfy webhook is the dependable channel.)
 
 ## Hard rules
 

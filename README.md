@@ -22,7 +22,7 @@ flowchart TD
     U([User submits feedback in your app<br/>no GitHub account needed])
     U -->|POST| W[Ingest Worker<br/>your free Cloudflare Worker]
     W -->|creates issue, assigns you| G[New GitHub issue<br/>labeled ff:feedback]
-    G --> N[You get a GitHub Mobile push]
+    G --> N[You get a ping<br/>Discord / Slack / ntfy webhook]
     N --> T{You review and label}
     T -->|ff:build = build it now| C[AI writes the code<br/>Claude or Copilot]
     C --> PR[Opens a pull request]
@@ -110,6 +110,12 @@ existing Claude subscription, so there's no extra cost at all.
 
 **Do end users need a GitHub account?** No. They only ever see your app's feedback
 form.
+
+**How do I get notified of new feedback?** Set a notification webhook (Discord,
+Slack, or ntfy) during setup — the Worker pings it on every submission. The Worker
+also assigns you to the issue, but GitHub **won't** push you for that: your own
+token does the assigning, and GitHub suppresses notifications for your own actions.
+So the webhook is the reliable channel.
 
 **Do I need new tokens for each app?** No. **One** classic `repo` GitHub token and
 **one** Cloudflare API token work for all your apps — reuse them. **Save them in a

@@ -5,7 +5,8 @@
 # The GitHub repo that issues are created in (owner/name).
 repo: your-username/your-repo
 
-# Who gets auto-assigned to new feedback issues (fires their GitHub Mobile push).
+# Who gets assigned to new feedback issues. (Reliable notifications come from the
+# NOTIFY_WEBHOOK you set at setup — GitHub suppresses the self-assignment push.)
 # Usually you. Must be a collaborator on `repo`.
 owner: your-username
 

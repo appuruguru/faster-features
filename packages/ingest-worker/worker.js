@@ -8,7 +8,7 @@
  *   GET  /widget.js   serve the feedback widget (so the embed is a one-liner)
  *   GET  /roadmap.js  serve the public roadmap widget
  *   GET  /            public roadmap data (title + status only)
- *   POST /            create a feedback issue (and assign the owner → mobile push)
+ *   POST /            create a feedback issue, assign the owner, ping NOTIFY_WEBHOOK
  *   POST /vote        upvote a roadmap item (optional; needs VOTES KV)
  *   POST /webhook     GitHub webhook: on the `ff:build` label, kick off the runner
  *
@@ -105,7 +105,8 @@ async function handleFeedback(request, env, origin) {
     body: issue.body,
     labels: ["ff:feedback", "ff:pending-triage"],
   };
-  // Assigning the owner is what fires their GitHub Mobile push — no workflow needed.
+  // Assign the owner for ownership/filtering. Note: GitHub does NOT push you for a
+  // self-assignment (your token did it), so the reliable ping is NOTIFY_WEBHOOK.
   if (env.OWNER) bodyObj.assignees = [env.OWNER];
 
   const resp = await gh(env, `/repos/${owner}/${name}/issues`, "POST", bodyObj);

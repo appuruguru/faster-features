@@ -1,61 +1,44 @@
 # faster-features
 
-Turn in-app user feedback into shipped features, fast.
+**Turn in-app user feedback into shipped features, fast.**
 
-A user clicks **Feedback** in your app → it becomes a triaged GitHub issue →
-your phone buzzes → you tap **backlog** or **build** → an AI writes the code and
-opens a PR. Feedback in, features out.
+A user clicks **Feedback** in your app → it becomes a triaged GitHub issue → your
+phone buzzes → you add a label → an AI writes the code and opens a PR. Optionally,
+a public **roadmap** shows users what's planned, in progress, and shipped — so the
+loop closes back to the people who asked.
 
-Designed around two rules:
+Built on two rules:
 
-1. **Free and off your infrastructure** — everything rides on free tiers
-   (GitHub, Cloudflare Workers free tier). The *only* cost is the AI that writes
-   the code, on your subscription or API key, and only when you approve a build.
+1. **Free and off your infrastructure** — everything rides on free tiers (GitHub +
+   a Cloudflare Worker). The *only* thing that costs anything is the AI that writes
+   the code, on your own subscription or API key, and only when you approve a build.
 2. **End users never touch GitHub** — no account, no idea a pipeline exists. They
    type feedback and hit Send.
 
-## The flow
+## How it works
 
-```
-[In-app widget]          one <script> line in your app; no account for users
-      | POST
-[Ingest Worker]          your free Cloudflare Worker; holds the token, does it all
-      |                  (creates issue, assigns you, serves the widget, handles labels)
-[GitHub Issue]           created + you're assigned → GitHub Mobile push
-      |
-[You add a label]        build ──► Worker kicks off your AI runner (via webhook)
-      v
-[AI writes code → PR]     Claude (sub or API) or Copilot — you pick. The one paid step.
-
-       ┌─────────────────────────────────────────────────────────┐
-       │ Public roadmap widget reads issues back out (opt-in,     │
-       │ title + status only) so users see Planned/In progress/   │
-       │ Shipped — closing the loop on their feedback.            │
-       └─────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    U([End user clicks Feedback]) -->|POST, no account| W[Ingest Worker<br/>your free Cloudflare Worker]
+    W -->|creates issue, assigns you| G[GitHub Issue: ff:feedback]
+    G -->|you're assigned| N[GitHub Mobile push]
+    N --> T{You triage}
+    T -->|add ff:roadmap / ff:backlog| R[Public Roadmap<br/>Planned, In progress, Shipped]
+    T -->|add ff:build| B[AI writes code, opens PR<br/>Claude or Copilot - you pick]
+    R -.->|users see status| U
 ```
 
-## What's in here
+The **Worker is the only thing you host** — a small, free, stateless Cloudflare
+Worker on your own account. It holds your GitHub token (so the browser never sees
+it), creates issues, assigns you, serves the widget, powers the roadmap, and
+handles the build label. Nothing else gets copied into your app repo.
 
-| Piece                                          | What it is                                                    |
-| ---------------------------------------------- | ------------------------------------------------------------ |
-| [`packages/widget`](packages/widget)           | Drop-in feedback button **and** public roadmap (vanilla JS + React). No token. |
-| [`packages/ingest-worker`](packages/ingest-worker) | Cloudflare Worker: issue creation, notify, roadmap, votes, webhook builds, serves the widgets. |
-| [`.github/`](.github)                           | Issue template + an **optional** `build.yml` (only for the `claude-api` runner). |
-| [`faster-features.config.yml`](faster-features.config.yml) | One config file: repo, owner, ingest URL, build runner. |
-| [`docs/`](docs)                                 | [Deploy the Worker](docs/deploy-ingest.md) · [Build runners](docs/build-runners.md) |
-| [`SECURITY.md`](SECURITY.md)                    | What's stored where; no secrets in git, no PII by default.    |
-| [`examples/demo.html`](examples/demo.html)      | A page hosting the widget for end-to-end testing.            |
+## Quickstart (~5 min)
 
-## Quickstart
+**Prerequisites:** a GitHub repo for your app, a free
+[Cloudflare](https://dash.cloudflare.com) account, and [Node.js](https://nodejs.org).
 
-There are **two jobs**: deploy the Worker once (a few steps), then drop one line
-into your app. Nothing else gets copied into your app repo — the Worker registers
-its own webhook and creates the labels.
-
-**Prerequisites:** a GitHub repo for your app, a free [Cloudflare](https://dash.cloudflare.com)
-account, and [Node.js](https://nodejs.org) installed.
-
-### Job 1 — Deploy the ingest Worker (once per app)
+### 1. Deploy the ingest Worker (once per app)
 
 Grab just the worker folder (no full clone) and run setup:
 
@@ -66,62 +49,96 @@ npm install
 npm run setup
 ```
 
-> **Windows / PowerShell:** these commands work as-is. If PowerShell blocks
-> `npm`/`npx` with an *execution policy* error, run this once in that window and
-> retry (it only affects the current session):
-> ```powershell
-> Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-> ```
+Setup prompts for your repo + a build runner, opens the two token pages
+(**GitHub** + **Cloudflare** — see the [FAQ](#faq) on what they need), then
+deploys, creates the `ff:` labels, registers the webhook, and **prints your embed
+snippet**. Full walkthrough + the no-terminal button: [docs/deploy-ingest.md](docs/deploy-ingest.md).
 
-`npm run setup` walks you through it and does the rest automatically:
-- **Prompts** for your app repo (`owner/name`), the GitHub login to notify, and a build runner.
-- **GitHub token** — opens the token page; paste a token that can access **your app repo**:
-  - *Simplest:* a **classic** token with the **`repo`** scope (covers issues, labels, and webhooks).
-  - *Locked-down:* a **fine-grained** token where you **select your repo** under "Only select repositories" (this step is easy to miss and is required for private repos) with **Issues: Read/write** + **Webhooks: Read/write**.
-  - (If the GitHub CLI is authed, it's grabbed automatically.)
-- **Cloudflare API token** — opens the token page; create a **Custom token** with these **Account** permissions: **Workers Scripts: Edit**, **Workers KV Storage: Edit**, **Account Settings: Read**. (Avoid the "Edit Cloudflare Workers" *template* — it forces a Zone/site selection you don't need for `*.workers.dev`.) Wrangler needs an API token for scripted setup; its browser login only works when you run wrangler by hand.
-- Then it **deploys, creates the labels, registers the webhook**, and **prints your embed snippet**.
+> **Windows/PowerShell:** if `npm`/`npx` is blocked by execution policy, run
+> `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` once and retry.
 
-See [docs/troubleshooting.md](docs/troubleshooting.md) if any step errors.
+### 2. Add one line to your app
 
-> Prefer no terminal? Use the button below. It deploys the Worker and provisions
-> KV/vars in the browser, **but** Cloudflare's button doesn't set secrets — after
-> it deploys you must add `GITHUB_TOKEN` and `WEBHOOK_SECRET` in the Worker's
-> **Settings → Variables and Secrets**. (The CLI path above sets them for you.)
->
-> [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/appuruguru/faster-features/tree/main/packages/ingest-worker)
-
-### Job 2 — Add one line to your app
-
-Paste the snippet `setup` printed, before `</body>`:
+Paste what setup printed, before `</body>`:
 
 ```html
 <script src="https://your-worker.workers.dev/widget.js"></script>
 ```
 
-That's it — a Feedback button appears, submissions become triaged issues in your
-repo, you get a GitHub Mobile push, and adding the `ff:build` label kicks off your
-AI runner. *(Only the opt-in `claude-api` runner needs `build.yml` in your repo —
-the default `claude-manual` and `copilot` runners don't.)*
+That's it — a Feedback button appears, submissions become triaged issues, you get
+a push, and adding `ff:build` kicks off your AI runner. (For a public roadmap, add
+a page with `roadmap.js` — see [examples/roadmap.html](examples/roadmap.html).)
 
-> **Labels:** the pipeline's labels are all prefixed **`ff:`** (`ff:feedback`,
-> `ff:build`, `ff:roadmap`, …) so they're clearly faster-features' own and don't
-> get confused with GitHub's stock labels (`bug`, `enhancement`, …). They're
-> created automatically — you never make them by hand.
+> Or let AI wire it in: run the [`/faster-features` skill](skills) in Claude Code,
+> or point any agent at [AGENTS.md](AGENTS.md).
+
+## What's in here
+
+| Piece | What it is |
+| --- | --- |
+| [`packages/widget`](packages/widget) | Drop-in feedback button **and** public roadmap (vanilla JS + React). No token. |
+| [`packages/ingest-worker`](packages/ingest-worker) | The Cloudflare Worker: issues, notify, roadmap, votes, webhook builds, serves the widgets. |
+| [`.github/`](.github) | Issue template + an **optional** `build.yml` (only for the `claude-api` runner). |
+| [`faster-features.config.yml`](faster-features.config.yml) | One config file: repo, owner, ingest URL, build runner. |
+| [`docs/`](docs) | [Deploy](docs/deploy-ingest.md) · [Build runners](docs/build-runners.md) · [Troubleshooting](docs/troubleshooting.md) |
+| [`SECURITY.md`](SECURITY.md) | What's stored where; no secrets in git, no PII by default. |
+| [`examples/`](examples) | A demo page for the widget and a roadmap page template. |
 
 ## Cost
 
-| Step                         | Cost                                            |
-| ---------------------------- | ----------------------------------------------- |
-| Widget + ingest + issues     | Free (Cloudflare + GitHub free tiers)           |
-| Notifications                | Free (GitHub Mobile)                            |
-| Backlog board                | Free (GitHub Projects)                          |
-| **AI build**                 | Your Claude subscription, or pay-per-token API  |
+| Step | Cost |
+| --- | --- |
+| Widget · ingest · issues · roadmap · notifications | **Free** (Cloudflare + GitHub free tiers) |
+| **AI build** | Your Claude subscription (manual kickoff) — or pay-per-token API / usage-based Copilot for hands-off |
 
-## A note on what's possible
+A *fully free and fully automated* build isn't possible without violating a
+provider's terms (Anthropic doesn't allow subscription tokens in CI). The default
+**`claude-manual`** runner is the sweet spot: you kick off the build in Claude Code
+on your existing subscription — that tap is also your approval — and everything
+else stays free.
 
-A *fully free and fully automated* build step isn't possible without violating a
-provider's terms — Anthropic restricts subscription tokens to first-party apps,
-so automated CI builds need a paid API key. The honest sweet spot is the default
-`claude-manual` runner: it runs on your existing subscription with one manual tap
-(which doubles as your approval), keeping everything else free.
+## FAQ
+
+**Does it cost money?** Only the AI build step. Capturing feedback, issues, the
+roadmap, and notifications are all free. With `claude-manual` you build on your
+existing Claude subscription, so there's no extra cost at all.
+
+**Do end users need a GitHub account?** No. They only ever see your app's feedback
+form.
+
+**Do I need new tokens for each app?** No. **One** classic `repo` GitHub token and
+**one** Cloudflare API token work for all your apps — reuse them. **Save them in a
+password manager** (GitHub shows a token only once). Regenerating a token revokes
+the old value and breaks apps already using it, so for a new app create a *new*
+token rather than regenerating.
+
+**Are my tokens stored in git or on disk?** No. The GitHub token lives only as an
+encrypted Cloudflare Worker secret; the Cloudflare token is used during setup and
+never stored. `wrangler.toml` holds only non-secret config. See [SECURITY.md](SECURITY.md).
+
+**What are the `ff:` labels?** The pipeline's labels, prefixed `ff:` so they don't
+get confused with GitHub's stock labels. They're created automatically — you never
+make them by hand.
+
+**Which label puts something on the roadmap?** `ff:roadmap` shows it; the column
+comes from `ff:backlog` (Planned), `ff:build`/`ff:in-progress` (In progress), or
+closing the issue (Shipped).
+
+**How do I actually build an approved issue?** Add `ff:build`, then open **Claude
+Code (CLI, desktop, or web)** and say *"implement issue #N, open a PR."* It reads
+the issue and builds on your subscription. Prefer hands-off? Use the `copilot` or
+`claude-api` runner (see [docs/build-runners.md](docs/build-runners.md)).
+
+**Can I use it across multiple apps?** Yes. Each app gets its own worker
+(`ff-<repo>`) and its own data — no collisions — and you reuse the same two tokens.
+
+**Do I have to redeploy when faster-features updates?** Backend (worker) changes:
+yes, re-run setup. Pure widget/cosmetic changes: those can be served from a CDN to
+avoid redeploys — a planned option.
+
+## Where this is headed
+
+Today faster-features is **self-host**: you deploy your own worker (~5 min) and own
+all your data and infra. The aim is an optional **hosted version** down the road —
+where adopting it is just an install script (or a GitHub App + snippet) with no
+deploy at all. The self-host path will always stay free and available.

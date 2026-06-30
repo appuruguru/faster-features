@@ -156,10 +156,11 @@ deploy at all. The self-host path will always stay free and available.
 
 ## License
 
-[Functional Source License 1.1 (MIT Future)](LICENSE) — **FSL-1.1-MIT**.
+[Elastic License 2.0](LICENSE) — **ELv2**.
 
 In plain terms: **use it freely** — self-host it, modify it, run it for your own
-apps and your business. The one thing you can't do is **sell a competing product
-or hosted service** that's basically this. Two years after each release, that
-version automatically becomes **MIT** (fully open). It's "source-available," not
-OSI open-source, precisely so it stays free to adopt without someone reselling it.
+apps and your business. The one thing you can't do is **offer it to others as a
+hosted/managed service or resell it** as a competing product. It's
+"source-available" (not OSI open-source) on purpose, so it stays free to adopt
+without someone turning it into a competing service. No time limit, no automatic
+conversion — the terms stay as-is.

@@ -153,3 +153,13 @@ Today faster-features is **self-host**: you deploy your own worker (~5 min) and 
 all your data and infra. The aim is an optional **hosted version** down the road —
 where adopting it is just an install script (or a GitHub App + snippet) with no
 deploy at all. The self-host path will always stay free and available.
+
+## License
+
+[Functional Source License 1.1 (MIT Future)](LICENSE) — **FSL-1.1-MIT**.
+
+In plain terms: **use it freely** — self-host it, modify it, run it for your own
+apps and your business. The one thing you can't do is **sell a competing product
+or hosted service** that's basically this. Two years after each release, that
+version automatically becomes **MIT** (fully open). It's "source-available," not
+OSI open-source, precisely so it stays free to adopt without someone reselling it.

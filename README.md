@@ -19,13 +19,18 @@ Built on two rules:
 
 ```mermaid
 flowchart TD
-    U([End user clicks Feedback]) -->|POST, no account| W[Ingest Worker<br/>your free Cloudflare Worker]
-    W -->|creates issue, assigns you| G[GitHub Issue: ff:feedback]
-    G -->|you're assigned| N[GitHub Mobile push]
-    N --> T{You triage}
-    T -->|add ff:roadmap / ff:backlog| R[Public Roadmap<br/>Planned, In progress, Shipped]
-    T -->|add ff:build| B[AI writes code, opens PR<br/>Claude or Copilot - you pick]
-    R -.->|users see status| U
+    U([User submits feedback in your app<br/>no GitHub account needed])
+    U -->|POST| W[Ingest Worker<br/>your free Cloudflare Worker]
+    W -->|creates issue, assigns you| G[New GitHub issue<br/>labeled ff:feedback]
+    G --> N[You get a GitHub Mobile push]
+    N --> T{You review and label}
+    T -->|ff:build = build it now| C[AI writes the code<br/>Claude or Copilot]
+    C --> PR[Opens a pull request]
+    PR --> MG[You review and merge]
+    MG --> SH[Issue closed = Shipped]
+    T -->|ff:roadmap = show it, ff:backlog = Planned| RM[[Public Roadmap<br/>Planned, In progress, Shipped]]
+    SH -->|if it's on the roadmap| RM
+    RM -.->|users see their request's status| U
 ```
 
 The **Worker is the only thing you host** — a small, free, stateless Cloudflare
